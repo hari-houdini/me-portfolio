@@ -53,11 +53,12 @@ export default defineConfig({
 				"app/features/galaxy/galaxy-particles.client.component.tsx",
 				"app/features/galaxy/galaxy-scene.client.component.tsx",
 				"app/features/galaxy/galaxy-title.client.component.tsx",
-				"app/features/city/buildings.client.component.tsx",
-				"app/features/city/car-lights.client.component.tsx",
-				"app/features/city/city-scene.client.component.tsx",
-				"app/features/city/neon-signs.client.component.tsx",
-				"app/features/city/rain.client.component.tsx",
+				// Warp tunnel R3F components — WebGL not available in Node/jsdom
+				"app/features/warp/warp-stars.client.component.tsx",
+				"app/features/warp/warp-road.client.component.tsx",
+				"app/features/warp/warp-cars.client.component.tsx",
+				"app/features/warp/warp-nebula.client.component.tsx",
+				"app/features/warp/warp-scene.client.component.tsx",
 				// Audio toggle uses browser APIs not available in full in Node
 				"app/features/audio/audio-toggle.client.component.tsx",
 				// Shared constants — trivially correct
