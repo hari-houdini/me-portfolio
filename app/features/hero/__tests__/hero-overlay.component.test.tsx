@@ -63,16 +63,20 @@ describe("HeroOverlay: renders CMS data correctly", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("name heading is opacity-0 when introComplete is false", () => {
+	it("intro state: container is in the DOM when introComplete is false", () => {
+		// Opacity is now GSAP-controlled on the container, not via CSS class.
+		// The component still renders the heading — visibility is managed
+		// by GSAP's inline style rather than a Tailwind class.
 		render(<HeroOverlay siteConfig={mockSiteConfig} introComplete={false} />);
 		const heading = screen.getByRole("heading", { level: 1 });
-		expect(heading.className).toContain("opacity-0");
+		expect(heading).toBeInTheDocument();
 	});
 
-	it("name heading is opacity-100 when introComplete is true", () => {
+	it("intro state: heading is rendered when introComplete is true", () => {
 		render(<HeroOverlay siteConfig={mockSiteConfig} introComplete />);
 		const heading = screen.getByRole("heading", { level: 1 });
-		expect(heading.className).toContain("opacity-100");
+		expect(heading).toBeInTheDocument();
+		expect(heading).toHaveTextContent(mockSiteConfig.name);
 	});
 
 	it("section has accessible landmark label", () => {
