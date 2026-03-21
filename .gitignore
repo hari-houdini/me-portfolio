@@ -32,6 +32,13 @@ Thumbs.db
 pnpm-debug.log*
 npm-debug.log*
 
+# ─── CMS (Payload + Next.js) ──────────────────────────────────────────────────
+/cms/node_modules/
+/cms/.next/
+/cms/media/
+/cms/.env
+/cms/payload-types.ts
+
 # ─── Claude Code ──────────────────────────────────────────────────────────────
 .claude/
 /agents/docs/local/
