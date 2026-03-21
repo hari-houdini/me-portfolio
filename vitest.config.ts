@@ -47,18 +47,18 @@ export default defineConfig({
 				// Three.js / R3F components — WebGL not available in Node/jsdom.
 				// Verified manually in the browser per PRD §5.2.
 				"app/features/experience/**",
-				"app/features/galaxy/galaxy-particles.tsx",
-				"app/features/galaxy/galaxy-scene.tsx",
-				"app/features/galaxy/galaxy-title.tsx",
-				"app/features/city/buildings.tsx",
-				"app/features/city/car-lights.tsx",
-				"app/features/city/city-scene.tsx",
-				"app/features/city/neon-signs.tsx",
-				"app/features/city/rain.tsx",
+				"app/features/galaxy/galaxy-particles.client.component.tsx",
+				"app/features/galaxy/galaxy-scene.client.component.tsx",
+				"app/features/galaxy/galaxy-title.client.component.tsx",
+				"app/features/city/buildings.client.component.tsx",
+				"app/features/city/car-lights.client.component.tsx",
+				"app/features/city/city-scene.client.component.tsx",
+				"app/features/city/neon-signs.client.component.tsx",
+				"app/features/city/rain.client.component.tsx",
 				// Audio toggle uses browser APIs not available in full in Node
-				"app/features/audio/audio-toggle.tsx",
+				"app/features/audio/audio-toggle.client.component.tsx",
 				// Shared constants — trivially correct
-				"app/shared/theme.ts",
+				"app/shared/theme.util.ts",
 			],
 			reporter: ["text", "lcov"],
 			thresholds: {

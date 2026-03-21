@@ -9,8 +9,8 @@
 
 "use client";
 
-import { GalaxyParticles } from "./galaxy-particles";
-import { GalaxyTitle } from "./galaxy-title";
+import { GalaxyParticles } from "./galaxy-particles.client.component";
+import { GalaxyTitle } from "./galaxy-title.client.component";
 
 interface GalaxySceneProps {
 	/** Opacity 0→1 for section transitions */

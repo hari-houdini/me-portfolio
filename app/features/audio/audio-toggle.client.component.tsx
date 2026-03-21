@@ -16,7 +16,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type AudioService, createAudioService } from "./audio-service";
+import { type AudioService, createAudioService } from "./audio.service";
 
 export function AudioToggle() {
 	const serviceRef = useRef<AudioService | null>(null);

@@ -13,6 +13,6 @@ export type {
 	CityConfig,
 	CityGeometry,
 	NeonSignData,
-} from "./city-generator";
-export { generateCity } from "./city-generator";
-export { CityScene } from "./city-scene";
+} from "./city.generator";
+export { generateCity } from "./city.generator";
+export { CityScene } from "./city-scene.client.component";

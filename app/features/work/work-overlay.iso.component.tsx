@@ -9,7 +9,7 @@
  */
 
 import type { Project, SiteConfig } from "~/services/cms/mod";
-import { ProjectCard } from "./project-card";
+import { ProjectCard } from "./project-card.iso.component";
 
 export interface WorkOverlayProps {
 	projects: Project[];

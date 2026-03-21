@@ -24,7 +24,7 @@ export type {
 	ProjectsListResponse,
 	SiteConfig,
 	SocialLink,
-} from "./cms.schemas";
+} from "./cms.schema";
 
 export {
 	AboutSchema,
@@ -36,5 +36,5 @@ export {
 	ProjectsListResponseSchema,
 	SiteConfigSchema,
 	SocialLinkSchema,
-} from "./cms.schemas";
+} from "./cms.schema";
 export { CmsService, CmsServiceLive } from "./cms.service";

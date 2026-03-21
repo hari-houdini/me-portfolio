@@ -16,7 +16,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import type { CarRoute } from "./city-generator";
+import type { CarRoute } from "./city.generator";
 
 const CAR_COUNT = 120;
 const CAR_SPEED_MIN = 5; // world units per second

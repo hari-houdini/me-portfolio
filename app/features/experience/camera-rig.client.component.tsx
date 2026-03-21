@@ -24,7 +24,7 @@ import { useScroll } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
-import { SECTION_COUNT } from "./scroll-section";
+import { SECTION_COUNT } from "./scroll-section.util";
 
 // Camera keyframes — one per scroll section
 const CAMERA_KEYFRAMES: { position: THREE.Vector3; target: THREE.Vector3 }[] = [

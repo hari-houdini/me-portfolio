@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { generateGalaxy } from "../galaxy-generator";
+import { generateGalaxy } from "../galaxy.generator";
 
 describe("galaxy-generator: generateGalaxy()", () => {
 	it("returns positions array with length = particleCount * 3", () => {

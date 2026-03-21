@@ -10,8 +10,11 @@
  *  - GalaxyConfig and GalaxyGeometry types
  */
 
-export type { GalaxyConfig, GalaxyGeometry } from "./galaxy-generator";
-export { generateGalaxy } from "./galaxy-generator";
-export { GALAXY_PARTICLE_COUNT, GalaxyParticles } from "./galaxy-particles";
-export { GalaxyScene } from "./galaxy-scene";
-export { GalaxyTitle } from "./galaxy-title";
+export type { GalaxyConfig, GalaxyGeometry } from "./galaxy.generator";
+export { generateGalaxy } from "./galaxy.generator";
+export {
+	GALAXY_PARTICLE_COUNT,
+	GalaxyParticles,
+} from "./galaxy-particles.client.component";
+export { GalaxyScene } from "./galaxy-scene.client.component";
+export { GalaxyTitle } from "./galaxy-title.client.component";

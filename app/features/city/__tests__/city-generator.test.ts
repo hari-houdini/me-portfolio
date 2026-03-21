@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { generateCity } from "../city-generator";
+import { generateCity } from "../city.generator";
 
 describe("city-generator: generateCity()", () => {
 	it("generates a non-zero number of buildings for default config", () => {

@@ -14,7 +14,7 @@ import {
 	mockProjectFeatured,
 	mockProjectRegular,
 } from "~/test/fixtures/cms.fixtures";
-import { ProjectCard } from "../project-card";
+import { ProjectCard } from "../project-card.iso.component";
 
 describe("ProjectCard: renders project data correctly", () => {
 	it("renders the project title as a heading", () => {
