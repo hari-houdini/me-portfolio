@@ -22,8 +22,8 @@
 import { ScrollControls, useScroll } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useRef, useState } from "react";
-import { CityScene } from "~/features/city/mod";
 import { GalaxyScene } from "~/features/galaxy/mod";
+import { WarpScene } from "~/features/warp/mod";
 import type { About, Contact, Project, SiteConfig } from "~/services/cms/mod";
 import { CameraRig } from "./camera-rig.client.component";
 import { PostFx } from "./post-fx.client.component";
@@ -63,24 +63,25 @@ function SceneContent({
 		rafRef.current = requestAnimationFrame(updateOffset);
 	}
 
-	// City section weight: 0 → galaxy, 1 → city
-	const cityWeight = Math.max(0, scrollOffset * 2 - 1);
+	// Warp section weight: 0 → galaxy visible, 1 → warp tunnel visible
+	// Transitions in the 0.5→1.0 range of scroll progress (Section 2→3)
+	const warpWeight = Math.max(0, scrollOffset * 2 - 1);
 
 	return (
 		<>
 			<CameraRig />
 
-			{/* Ambient light shared across both scenes */}
-			<ambientLight intensity={0.1} />
+			{/* Ambient light — very low, lets scene emissives dominate */}
+			<ambientLight intensity={0.05} />
 
-			{/* Galaxy — full opacity in sections 1 & 2, fades at section 3 */}
-			<group visible={cityWeight < 0.99}>
-				<GalaxyScene opacity={1 - cityWeight} />
+			{/* Galaxy — Sections 1 & 2, fades as warp begins */}
+			<group visible={warpWeight < 0.99}>
+				<GalaxyScene opacity={1 - warpWeight} />
 			</group>
 
-			{/* City — invisible until section 3 transition begins */}
-			<group visible={cityWeight > 0.01}>
-				<CityScene opacity={cityWeight} />
+			{/* Warp tunnel — Section 3, fades in as galaxy fades out */}
+			<group visible={warpWeight > 0.01}>
+				<WarpScene opacity={warpWeight} />
 			</group>
 
 			<PostFx scrollOffset={scrollOffset} />

@@ -14,8 +14,8 @@
  * Camera path:
  *  Section 1 (GALAXY_ANGLED): position [0, 30, 60], look-at [0, 0, 0]
  *  Section 2 (GALAXY_TOP):    position [0, 90,  5], look-at [0, 0, 0]
- *  Section 3 (CITY):          position [0, 80,  0], look-at [0, 0, 0]
- *    (city is rendered beneath the galaxy — camera descends into it)
+ *  Section 3 (WARP TUNNEL):   position [0, -78.5, 5], look-at [0, -78.5, -200]
+ *    (camera dives from Y=90 to Y=-78.5, emerging at road level inside the tunnel)
  */
 
 "use client";
@@ -26,7 +26,21 @@ import { useRef } from "react";
 import * as THREE from "three";
 import { SECTION_COUNT } from "./scroll-section.util";
 
-// Camera keyframes — one per scroll section
+/**
+ * Camera keyframes — one per scroll section.
+ *
+ * Section 1 (GALAXY_ANGLED): Angled view from above and in front of the galaxy.
+ *   position(0, 30, 60) looks toward the galactic centre at the origin.
+ *
+ * Section 2 (GALAXY_TOP): Directly above, looking straight down.
+ *   position(0, 90, 5) — slight Z offset so the camera is not perfectly vertical
+ *   (avoids gimbal lock). Look-at remains the galactic centre.
+ *
+ * Section 3 (WARP): Eye-level inside the warp tunnel (y=-78.5, road at y=-80).
+ *   Camera is on the road looking along -Z into the tunnel.
+ *   The dive from Section 2 (Y=90) to Section 3 (Y=-78.5) creates the
+ *   sensation of plunging through the galactic core and emerging in the warp.
+ */
 const CAMERA_KEYFRAMES: { position: THREE.Vector3; target: THREE.Vector3 }[] = [
 	// Section 1 — angled view of galaxy
 	{
@@ -38,10 +52,12 @@ const CAMERA_KEYFRAMES: { position: THREE.Vector3; target: THREE.Vector3 }[] = [
 		position: new THREE.Vector3(0, 90, 5),
 		target: new THREE.Vector3(0, 0, 0),
 	},
-	// Section 3 — aerial view of cyberpunk city
+	// Section 3 — first-person eye level inside warp tunnel
+	// Road surface is at y=-80; camera at y=-78.5 (1.5 units above road)
+	// Looking along -Z (into the tunnel depth)
 	{
-		position: new THREE.Vector3(0, 80, 0),
-		target: new THREE.Vector3(0, -40, 0),
+		position: new THREE.Vector3(0, -78.5, 5),
+		target: new THREE.Vector3(0, -78.5, -200),
 	},
 ];
 
