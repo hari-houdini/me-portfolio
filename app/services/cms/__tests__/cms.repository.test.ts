@@ -115,6 +115,26 @@ describe("cms repository: fetchSiteConfig", () => {
 		}
 	});
 
+	it("fails with CmsParseError when the response body fails Zod schema validation", async () => {
+		// The API returns valid JSON but with a shape that does not satisfy SiteConfigSchema
+		// (e.g. Payload returns an error envelope instead of the global document).
+		server.use(
+			http.get(`${BASE}/api/globals/site-config`, () =>
+				HttpResponse.json({ errors: [{ message: "Unauthorized" }] }),
+			),
+		);
+
+		const result = await runEither(fetchSiteConfig(BASE));
+
+		expect(Either.isLeft(result)).toBe(true);
+		if (Either.isLeft(result)) {
+			expect(result.left).toBeInstanceOf(CmsParseError);
+			expect((result.left as CmsParseError).url).toBe(
+				`${BASE}/api/globals/site-config`,
+			);
+		}
+	});
+
 	it("fails with CmsParseError when the response body is not valid JSON", async () => {
 		server.use(
 			http.get(

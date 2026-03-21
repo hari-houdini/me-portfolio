@@ -1,17 +1,30 @@
 /**
  * cms.fixtures.ts
  *
- * Realistic test fixtures for all CMS resource types.
+ * Test fixtures generated from Zod schemas via zocker.
  *
- * Rules:
- *  - Every optional field is tested in two variants where relevant:
- *    a present value and a null value
- *  - Values are chosen to be representative of real CMS data, not just
- *    placeholder strings, so that assertion messages are meaningful
- *  - Fixtures are typed with the exact interfaces from cms.types.ts —
- *    any schema change will cause a compile error here, surfacing the gap
+ * Why zocker instead of hand-written objects:
+ *  - Fixtures stay automatically in sync with schema changes.
+ *    A schema field addition/rename immediately causes a TypeScript error here,
+ *    surfacing the gap before any test runs.
+ *  - No maintenance overhead for keeping mock values plausible.
+ *  - zocker's setSeed() guarantees determinism: same seed = same data on
+ *    every run, on every machine, in CI.
+ *
+ * Override strategy:
+ *  Fields that tests explicitly assert on (e.g. project order for sorting)
+ *  are spread-overridden after generation. Zocker generates valid base data;
+ *  overrides apply the specific values the test needs.
  */
 
+import { zocker } from "zocker";
+import {
+	AboutSchema,
+	ContactSchema,
+	PageDataSchema,
+	ProjectSchema,
+	SiteConfigSchema,
+} from "~/services/cms/cms.schemas";
 import type {
 	About,
 	Contact,
@@ -20,54 +33,28 @@ import type {
 	SiteConfig,
 } from "~/services/cms/mod";
 
+// A single seed for the entire fixture set — guarantees cross-fixture
+// consistency. Increment if a schema change causes an undesirable value.
+const SEED = 42;
+
 // ---------------------------------------------------------------------------
 // SiteConfig
 // ---------------------------------------------------------------------------
 
-export const mockSiteConfig: SiteConfig = {
-	name: "Hari Houdini",
-	tagline: "Creative Technologist",
-	subtitle: "Building at the intersection of art and engineering",
-	sectionTitles: {
-		hero: "Hello, Universe",
-		about: "About",
-		work: "Work",
-		contact: "Contact",
-	},
-	seo: {
-		metaTitle: "Hari Houdini — Creative Technologist",
-		metaDescription:
-			"Portfolio of Hari Houdini — immersive 3D experiences built with React Three Fiber.",
-		ogImage: {
-			url: "https://cms.harihoudini.dev/media/og.png",
-			width: 1200,
-			height: 630,
-			alt: "Hari Houdini portfolio — galaxy hero image",
-			sizes: {
-				thumbnail: null,
-				og: {
-					url: "https://cms.harihoudini.dev/media/og-1200.png",
-					width: 1200,
-					height: 630,
-				},
-			},
-		},
-	},
-};
+export const mockSiteConfig: SiteConfig = zocker(SiteConfigSchema)
+	.setSeed(SEED)
+	.generate();
 
+// A minimal variant used in tests that exercise nullable field fallbacks.
 export const mockSiteConfigMinimal: SiteConfig = {
-	name: "Hari Houdini",
-	tagline: "Creative Technologist",
+	...zocker(SiteConfigSchema)
+		.setSeed(SEED + 1)
+		.generate(),
 	subtitle: null,
-	sectionTitles: {
-		hero: "Hello, Universe",
-		about: "About",
-		work: "Work",
-		contact: "Contact",
-	},
 	seo: {
-		metaTitle: "Hari Houdini",
-		metaDescription: "",
+		...zocker(SiteConfigSchema)
+			.setSeed(SEED + 1)
+			.generate().seo,
 		ogImage: null,
 	},
 };
@@ -76,36 +63,29 @@ export const mockSiteConfigMinimal: SiteConfig = {
 // About
 // ---------------------------------------------------------------------------
 
-export const mockAbout: About = {
-	bio: {
-		root: {
-			type: "root",
-			children: [
-				{
-					type: "paragraph",
-					children: [{ text: "I build immersive digital experiences." }],
-				},
-			],
-		},
-	},
-	skills: ["React", "Three.js", "TypeScript", "Node.js", "GLSL"],
-	photo: {
-		url: "https://cms.harihoudini.dev/media/portrait.jpg",
-		width: 800,
-		height: 800,
-		alt: "Hari Houdini",
-		sizes: {
-			thumbnail: {
-				url: "https://cms.harihoudini.dev/media/portrait-400.jpg",
-				width: 400,
-				height: 400,
-			},
-			og: null,
-		},
+// bio is typed as z.unknown() in the schema (Lexical rich-text document shape).
+// Zocker may generate non-JSON-serializable values for `unknown` fields.
+// Override with a minimal Lexical document that survives HTTP round-trips.
+const MOCK_LEXICAL_DOC = {
+	root: {
+		type: "root",
+		version: 1,
+		children: [],
+		direction: null,
+		format: "",
+		indent: 0,
 	},
 };
 
+export const mockAbout: About = {
+	...zocker(AboutSchema).setSeed(SEED).generate(),
+	bio: MOCK_LEXICAL_DOC,
+};
+
 export const mockAboutMinimal: About = {
+	...zocker(AboutSchema)
+		.setSeed(SEED + 1)
+		.generate(),
 	bio: null,
 	skills: [],
 	photo: null,
@@ -115,26 +95,14 @@ export const mockAboutMinimal: About = {
 // Contact
 // ---------------------------------------------------------------------------
 
-export const mockContact: Contact = {
-	email: "hello@harihoudini.dev",
-	ctaText: "Let's work together",
-	socials: [
-		{
-			platform: "github",
-			url: "https://github.com/hari-houdini",
-			label: "GitHub",
-		},
-		{
-			platform: "twitter",
-			url: "https://twitter.com/hari_houdini",
-			label: "Twitter",
-		},
-	],
-};
+export const mockContact: Contact = zocker(ContactSchema)
+	.setSeed(SEED)
+	.generate();
 
 export const mockContactMinimal: Contact = {
-	email: "hello@harihoudini.dev",
-	ctaText: "Get in touch",
+	...zocker(ContactSchema)
+		.setSeed(SEED + 1)
+		.generate(),
 	socials: [],
 };
 
@@ -143,50 +111,27 @@ export const mockContactMinimal: Contact = {
 // ---------------------------------------------------------------------------
 
 export const mockProjectFeatured: Project = {
-	id: "proj-001",
-	title: "Galaxy Portfolio",
-	description:
-		"An immersive 3D portfolio built with React Three Fiber and custom GLSL shaders.",
+	...zocker(ProjectSchema).setSeed(SEED).generate(),
+	// longDescription is typed z.unknown() — zocker may generate non-JSON-
+	// serializable values. Null is the correct representation for a project
+	// that has no long description yet.
 	longDescription: null,
-	thumbnail: {
-		url: "https://cms.harihoudini.dev/media/galaxy-thumb.jpg",
-		width: 800,
-		height: 600,
-		alt: "Galaxy portfolio screenshot",
-		sizes: {
-			thumbnail: {
-				url: "https://cms.harihoudini.dev/media/galaxy-thumb-400.jpg",
-				width: 400,
-				height: 300,
-			},
-			og: null,
-		},
-	},
-	tags: ["React", "Three.js", "GLSL", "TypeScript"],
-	url: "https://harihoudini.dev",
-	github: "https://github.com/hari-houdini/me-portfolio",
-	featured: true,
-	year: 2026,
 	status: "published",
+	featured: true,
 	order: 1,
 };
 
 export const mockProjectRegular: Project = {
-	id: "proj-002",
-	title: "Starboi",
-	description: "Generative art experiment using procedural geometry.",
+	...zocker(ProjectSchema)
+		.setSeed(SEED + 1)
+		.generate(),
 	longDescription: null,
-	thumbnail: null,
-	tags: ["Three.js", "GLSL"],
-	url: null,
-	github: "https://github.com/hari-houdini/starboi",
-	featured: false,
-	year: 2025,
 	status: "published",
+	featured: false,
 	order: 2,
 };
 
-export const mockProjects: ReadonlyArray<Project> = [
+export const mockProjects: Project[] = [
 	mockProjectFeatured,
 	mockProjectRegular,
 ];
@@ -201,3 +146,7 @@ export const mockPageData: PageData = {
 	contact: mockContact,
 	projects: mockProjects,
 };
+
+// Confirm the aggregated shape is schema-valid at module load time.
+// If this throws, a schema/fixture mismatch exists and tests will fail fast.
+PageDataSchema.parse(mockPageData);

@@ -3,45 +3,51 @@
  *
  * Raw HTTP access layer for the Payload CMS REST API.
  *
- * Responsibility:
+ * Responsibilities:
  *  - Build the correct endpoint URL for each resource
  *  - Execute the fetch request
  *  - Map HTTP status codes and network failures to typed CmsError variants
- *  - Return the raw parsed JSON as the typed resource shape
+ *  - Validate the parsed JSON body against the Zod schema (runtime safety)
+ *  - Return the strongly-typed, validated resource
  *
  * This module does NOT:
- *  - Compose multiple fetches
- *  - Apply business logic
- *  - Cache results
+ *  - Compose multiple fetches (that is CmsService's job)
+ *  - Apply business logic or caching
  *
- * Consumers: cms.service.ts only. Nothing outside this pod should import
- * repository functions directly.
+ * Consumers: cms.service.ts only.
  */
 
 import { Effect } from "effect";
+import type { z } from "zod";
 import type { CmsError } from "./cms.errors";
 import { CmsNetworkError, CmsNotFoundError, CmsParseError } from "./cms.errors";
-import type {
-	About,
-	Contact,
-	ProjectsListResponse,
-	SiteConfig,
-} from "./cms.types";
+import type { About, Contact, Project, SiteConfig } from "./cms.schemas";
+import {
+	AboutSchema,
+	ContactSchema,
+	ProjectsListResponseSchema,
+	SiteConfigSchema,
+} from "./cms.schemas";
 
 // ---------------------------------------------------------------------------
-// Internal helpers
+// Internal helper
 // ---------------------------------------------------------------------------
 
 /**
- * Executes a fetch request against the given URL and parses the JSON body.
+ * Fetches the given URL, parses the JSON body, and validates it against the
+ * provided Zod schema.
  *
  * Error mapping:
- *  - 404 → CmsNotFoundError
- *  - Any other non-ok status → CmsNetworkError
- *  - Network/DNS failure → CmsNetworkError
- *  - JSON parse failure → CmsParseError
+ *  - 404                       → CmsNotFoundError
+ *  - Any other non-ok status   → CmsNetworkError
+ *  - Network / DNS failure     → CmsNetworkError (fetch throws)
+ *  - JSON parse failure        → CmsParseError
+ *  - Zod schema validation     → CmsParseError
  */
-const fetchJson = <T>(url: string): Effect.Effect<T, CmsError> =>
+const fetchJsonValidated = <S extends z.ZodType>(
+	url: string,
+	schema: S,
+): Effect.Effect<z.infer<S>, CmsError> =>
 	Effect.tryPromise({
 		try: async () => {
 			let response: Response;
@@ -70,10 +76,14 @@ const fetchJson = <T>(url: string): Effect.Effect<T, CmsError> =>
 				throw new CmsParseError({ url, cause: parseCause });
 			}
 
-			return body as T;
+			const result = schema.safeParse(body);
+			if (!result.success) {
+				throw new CmsParseError({ url, cause: result.error });
+			}
+
+			return result.data as z.infer<S>;
 		},
 		catch: (thrown) => {
-			// If we already constructed a typed error inside try, pass it through.
 			if (
 				thrown instanceof CmsNotFoundError ||
 				thrown instanceof CmsNetworkError ||
@@ -81,8 +91,6 @@ const fetchJson = <T>(url: string): Effect.Effect<T, CmsError> =>
 			) {
 				return thrown;
 			}
-			// Unknown thrown value — defensive fallback, not reachable
-			// through documented code paths (all errors are typed above).
 			return new CmsNetworkError({ url, cause: thrown });
 		},
 	});
@@ -92,46 +100,47 @@ const fetchJson = <T>(url: string): Effect.Effect<T, CmsError> =>
 // ---------------------------------------------------------------------------
 
 /**
- * Fetches the site-config global.
+ * Fetches and validates the site-config global.
  * Endpoint: GET /api/globals/site-config
  */
 export const fetchSiteConfig = (
 	baseUrl: string,
 ): Effect.Effect<SiteConfig, CmsError> =>
-	fetchJson<SiteConfig>(`${baseUrl}/api/globals/site-config`);
+	fetchJsonValidated(`${baseUrl}/api/globals/site-config`, SiteConfigSchema);
 
 /**
- * Fetches the about global.
+ * Fetches and validates the about global.
  * Endpoint: GET /api/globals/about
  */
 export const fetchAbout = (baseUrl: string): Effect.Effect<About, CmsError> =>
-	fetchJson<About>(`${baseUrl}/api/globals/about`);
+	fetchJsonValidated(`${baseUrl}/api/globals/about`, AboutSchema);
 
 /**
- * Fetches the contact global.
+ * Fetches and validates the contact global.
  * Endpoint: GET /api/globals/contact
  */
 export const fetchContact = (
 	baseUrl: string,
 ): Effect.Effect<Contact, CmsError> =>
-	fetchJson<Contact>(`${baseUrl}/api/globals/contact`);
+	fetchJsonValidated(`${baseUrl}/api/globals/contact`, ContactSchema);
 
 /**
- * Fetches all published projects, sorted by the manual `order` field.
+ * Fetches and validates all published projects, sorted by the `order` field.
  * Endpoint: GET /api/projects?where[status][equals]=published&sort=order&limit=100
  *
- * Extracts the `docs` array from the Payload paginated list response.
+ * Validates the full Payload list response shape, then extracts `docs`.
  */
 export const fetchProjects = (
 	baseUrl: string,
-): Effect.Effect<ProjectsListResponse["docs"], CmsError> => {
+): Effect.Effect<Project[], CmsError> => {
 	const params = new URLSearchParams({
 		"where[status][equals]": "published",
 		sort: "order",
 		limit: "100",
 	});
 
-	return fetchJson<ProjectsListResponse>(
+	return fetchJsonValidated(
 		`${baseUrl}/api/projects?${params.toString()}`,
+		ProjectsListResponseSchema,
 	).pipe(Effect.map((response) => response.docs));
 };

@@ -79,7 +79,7 @@ export const loader = async (_args: Route.LoaderArgs): Promise<PageData> => {
 // ---------------------------------------------------------------------------
 
 export function meta({ data }: Route.MetaArgs) {
-	const seo = data?.seo ?? fallbackPageData.siteConfig.seo;
+	const seo = data?.siteConfig.seo ?? fallbackPageData.siteConfig.seo;
 	return [
 		{ title: seo.metaTitle },
 		{ name: "description", content: seo.metaDescription },
