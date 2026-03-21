@@ -21,8 +21,9 @@ export default defineConfig({
 	test: {
 		globals: true,
 		// Service and utility tests run in Node — no DOM required.
-		// Component tests (Phase 6+) opt in per-file with:
+		// Component tests (HTML overlays, audio toggle) declare:
 		//   // @vitest-environment jsdom
+		// at the top of their file to opt in to the jsdom environment.
 		environment: "node",
 		setupFiles: ["./app/test/setup.ts"],
 		coverage: {
@@ -43,6 +44,21 @@ export default defineConfig({
 				"app/routes.ts",
 				// Welcome boilerplate — removed in Phase 3
 				"app/welcome/**",
+				// Three.js / R3F components — WebGL not available in Node/jsdom.
+				// Verified manually in the browser per PRD §5.2.
+				"app/features/experience/**",
+				"app/features/galaxy/galaxy-particles.tsx",
+				"app/features/galaxy/galaxy-scene.tsx",
+				"app/features/galaxy/galaxy-title.tsx",
+				"app/features/city/buildings.tsx",
+				"app/features/city/car-lights.tsx",
+				"app/features/city/city-scene.tsx",
+				"app/features/city/neon-signs.tsx",
+				"app/features/city/rain.tsx",
+				// Audio toggle uses browser APIs not available in full in Node
+				"app/features/audio/audio-toggle.tsx",
+				// Shared constants — trivially correct
+				"app/shared/theme.ts",
 			],
 			reporter: ["text", "lcov"],
 			thresholds: {
