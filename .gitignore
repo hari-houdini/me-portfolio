@@ -15,3 +15,6 @@
 /cms/media/
 /cms/.env
 /cms/payload-types.ts
+
+# Local session memory — never push to remote
+/agents/docs/local/
