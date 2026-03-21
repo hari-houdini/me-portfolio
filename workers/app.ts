@@ -22,6 +22,11 @@ import { createRequestHandler } from "@react-router/cloudflare";
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
 
+// Fetcher is a Cloudflare Workers global type provided by @cloudflare/workers-types.
+// It is available at runtime in the Workers environment; the type is referenced
+// here to satisfy the TypeScript compiler.
+type Fetcher = import("@cloudflare/workers-types").Fetcher;
+
 export interface CloudflareEnv {
 	PAYLOAD_API_URL: string;
 	ASSETS: Fetcher;
