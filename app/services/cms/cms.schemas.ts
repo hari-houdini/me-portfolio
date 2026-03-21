@@ -13,11 +13,44 @@
  *    not by this service layer.
  *  - Nullable fields match the Payload REST API contract from PRD-001 §4.6.
  *
+ * Payload array-of-objects format:
+ *  Payload's `array` field type wraps each item in an object with an auto-
+ *  generated `id`. For example, tags come back as [{id:"abc", tag:"React"}].
+ *  We use a union schema that accepts BOTH the raw Payload format AND a plain
+ *  string (used in test fixtures), then transform to string[]. This means:
+ *   - Real Payload API responses validate correctly
+ *   - Test fixtures can use the simpler string[] format
+ *   - z.infer<> gives string[] (the normalised domain type)
+ *
  * Barrel exports: all schemas and inferred types are re-exported from mod.ts.
  * Consumers outside this pod import from mod.ts only.
  */
 
 import { z } from "zod";
+
+// ---------------------------------------------------------------------------
+// Internal helpers for Payload's array-of-objects fields
+// ---------------------------------------------------------------------------
+
+/**
+ * Accepts either a plain string or a Payload array-item object { id?, [field] }.
+ * Transforms to string[]. Works with both real API responses and test fixtures.
+ */
+const payloadTagArray = (fieldName: string) =>
+	z
+		.array(
+			z.union([
+				z.string(),
+				z.object({ id: z.string().optional(), [fieldName]: z.string() }),
+			]),
+		)
+		.transform((arr) =>
+			arr.map((item) =>
+				typeof item === "string"
+					? item
+					: ((item as Record<string, string>)[fieldName] ?? ""),
+			),
+		);
 
 // ---------------------------------------------------------------------------
 // Shared sub-schemas
@@ -40,7 +73,14 @@ export const MediaObjectSchema = z.object({
 	}),
 });
 
+/**
+ * SocialLinkSchema
+ *
+ * Payload's `array` field adds an `id` to each social link item.
+ * `id` is optional so the schema also accepts fixtures without it.
+ */
 export const SocialLinkSchema = z.object({
+	id: z.string().optional(),
 	platform: z.string(),
 	url: z.string(),
 	label: z.string(),
@@ -70,7 +110,11 @@ export const SiteConfigSchema = z.object({
 export const AboutSchema = z.object({
 	/** Lexical rich-text document — shape consumed by the renderer in Phase 3. */
 	bio: z.unknown(),
-	skills: z.array(z.string()),
+	/**
+	 * Payload returns [{id, skill: "React"}]. The union transform normalises
+	 * this to string[] while also accepting plain strings from test fixtures.
+	 */
+	skills: payloadTagArray("skill"),
 	photo: MediaObjectSchema.nullable(),
 });
 
@@ -91,7 +135,11 @@ export const ProjectSchema = z.object({
 	/** Lexical rich-text document — shape consumed by the renderer in Phase 3. */
 	longDescription: z.unknown(),
 	thumbnail: MediaObjectSchema.nullable(),
-	tags: z.array(z.string()),
+	/**
+	 * Payload returns [{id, tag: "React"}]. The union transform normalises
+	 * this to string[] while also accepting plain strings from test fixtures.
+	 */
+	tags: payloadTagArray("tag"),
 	url: z.string().nullable(),
 	github: z.string().nullable(),
 	featured: z.boolean(),
