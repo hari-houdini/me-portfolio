@@ -271,7 +271,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 					</Suspense>
 
 					{/* HTML overlays layered above the canvas */}
-					<HeroOverlay siteConfig={siteConfig} introComplete isMobile={false} />
+					<HeroOverlay
+						siteConfig={siteConfig}
+						scrollOffset={scrollOffset}
+						introComplete
+						isMobile={false}
+					/>
 
 					<div
 						className="transition-opacity duration-700"
