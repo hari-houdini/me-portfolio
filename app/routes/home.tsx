@@ -118,8 +118,18 @@ export function meta({ data }: Route.MetaArgs) {
 // GSAP ScrollTrigger magnetic snap
 // ---------------------------------------------------------------------------
 
-/** Section boundary offsets (0→1) — must match SECTION_OFFSETS in scroll-section.ts */
-const SNAP_OFFSETS = [0, 0.33, 0.66, 1];
+/**
+ * Section anchor scroll positions (0→1 of total scrollable height).
+ * These must align with SECTION_OFFSETS in scroll-section.util.ts.
+ */
+const SNAP_ANCHORS = [0, 0.33, 0.66, 1] as const;
+
+/**
+ * How much past a section boundary (in normalised offset units) the user
+ * must scroll before the snap fires. Too low = snaps too eagerly;
+ * too high = snap feels unresponsive. 0.12 = ~12% into the next section.
+ */
+const SNAP_THRESHOLD = 0.12;
 
 function useScrollSnap(
 	containerRef: React.RefObject<HTMLElement | null>,
@@ -139,23 +149,41 @@ function useScrollSnap(
 					const container = containerRef.current;
 					if (!container) return;
 
-					const triggers = SNAP_OFFSETS.slice(0, -1).map((offset, i) => {
-						const nextOffset = SNAP_OFFSETS[i + 1];
-						return ScrollTrigger.create({
-							trigger: container,
-							start: `${offset * 100}% top`,
-							end: `${nextOffset * 100}% top`,
-							snap: {
-								snapTo: [0, 1],
-								duration: { min: 0.2, max: 0.5 },
-								delay: 0.05,
-								ease: "power1.inOut",
+					// Single scroll trigger covering the entire scroll container.
+					// snap.snapTo receives a function that returns the normalised target
+					// position [0,1] — we map our three anchors to this space.
+					const trigger = ScrollTrigger.create({
+						trigger: container,
+						start: "top top",
+						end: "bottom bottom",
+						snap: {
+							// directional=true: only snap in the direction of scroll
+							// inertia=false: let ScrollTrigger own the momentum
+							snapTo: (rawValue: number) => {
+								// rawValue is progress 0→1 of the scroll container
+								for (let i = 0; i < SNAP_ANCHORS.length - 1; i++) {
+									const lo = SNAP_ANCHORS[i];
+									const hi = SNAP_ANCHORS[i + 1];
+									// If we are within one section zone…
+									if (rawValue >= lo && rawValue <= hi) {
+										const mid = lo + (hi - lo) * SNAP_THRESHOLD;
+										// …snap back to section start until past threshold
+										return rawValue < mid ? lo : hi;
+									}
+								}
+								return rawValue;
 							},
-						});
+							duration: { min: 0.3, max: 0.6 },
+							// delay: how long the user must be idle before snap fires
+							// 0.15s gives enough window to scroll intentionally without
+							// the snap fighting the gesture
+							delay: 0.15,
+							ease: "power2.inOut",
+						},
 					});
 
 					cleanup = () => {
-						for (const trigger of triggers) trigger.kill();
+						trigger.kill();
 						for (const t of ScrollTrigger.getAll()) t.kill();
 					};
 				}),

@@ -12,7 +12,7 @@
 
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import type { BuildingData } from "./city-generator";
+import type { BuildingData } from "./city.generator";
 
 interface BuildingsProps {
 	buildings: BuildingData[];
