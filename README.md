@@ -2,7 +2,7 @@
 
 An immersive, single-page 3D portfolio built with React Three Fiber, custom GLSL shaders, and procedural generation. Every visual is authored code — no purchased assets.
 
-> **Status:** Phase 2 complete — Payload CMS v3 schema, collections, globals, and Railway deployment config.
+> **Status:** Phase 1 complete — foundation, CMS service layer, and test infrastructure.
 > See [PRD-001](./agents/docs/PRD-001-immersive-portfolio.md) for the full specification and [GitHub Issue #1](https://github.com/hari-houdini/me-portfolio/issues/1) for the requirement breakdown.
 
 ---
@@ -19,7 +19,7 @@ An immersive, single-page 3D portfolio built with React Three Fiber, custom GLSL
 | Accessibility | React Aria Components |
 | Service Layer | Effect-ts (Layer DI · Effect.Effect · typed errors) |
 | Schema & Validation | Zod v4 (schemas as source of truth · z.infer<> types) |
-| CMS | Payload CMS v3 + Next.js 16 (`cms/` subfolder) |
+| CMS | Payload CMS v3 + Next.js 15 (`cms/` subfolder) |
 | CMS DB | PostgreSQL via Supabase |
 | CMS Hosting | Railway.app |
 | Edge Deployment | Cloudflare Workers (Hono middleware) |
@@ -58,15 +58,7 @@ me-portfolio/
 │   └── app.css                 # Tailwind v4, cyberpunk palette, typography
 ├── workers/
 │   └── app.ts                  # Cloudflare Workers entry (Hono + RR7 handler)
-├── cms/                        # Payload CMS v3 + Next.js 16 (complete)
-│   ├── src/
-│   │   ├── access/             # isAdmin access control function
-│   │   ├── collections/        # Users, Media, Projects
-│   │   ├── globals/            # SiteConfig, About, Contact
-│   │   └── payload.config.ts   # Main Payload config (DB, editor, CORS, sharp)
-│   ├── app/(payload)/          # Next.js admin panel + REST API routes
-│   ├── railway.json            # Railway deployment config
-│   └── .env.example            # Required environment variables
+├── cms/                        # Payload CMS v3 + Next.js 15 (Phase 2)
 ├── agents/
 │   └── docs/
 │       └── PRD-001-immersive-portfolio.md
@@ -132,66 +124,22 @@ pnpm check
 
 ---
 
-## CMS Setup
+## CMS Setup (Phase 2)
 
-The Payload CMS lives in `cms/` and runs as a separate Next.js 16 application.
-
-### Local development
+The Payload CMS lives in `cms/` and runs as a separate Next.js 15 application.
 
 ```bash
-# 1. Copy environment file and fill in your values
-cp cms/.env.example cms/.env
-
-# 2. Install CMS dependencies
-cd cms && pnpm install
-
-# 3. Start the CMS dev server (admin panel at http://localhost:3001/admin)
-pnpm dev
+# From the cms/ directory
+pnpm install
+pnpm dev        # admin panel at http://localhost:3001/admin
 ```
 
-On first run, navigate to `http://localhost:3001/admin/create-first-user` to create your admin account.
-
-### Required environment variables (`cms/.env`)
-
-| Variable | Description |
-|---|---|
-| `DATABASE_URI` | PostgreSQL connection string (Supabase: Settings → Database → URI) |
-| `PAYLOAD_SECRET` | Random 32-char secret: `openssl rand -hex 32` |
-| `NEXT_PUBLIC_SERVER_URL` | CMS origin (e.g. `http://localhost:3001`) |
-| `PORTFOLIO_URL` | Portfolio origin, added to CMS CORS allow-list |
-
-### Pointing the portfolio at the CMS
-
-Set `PAYLOAD_API_URL` in the **portfolio** app's environment:
+Set `PAYLOAD_API_URL` in your environment to point the portfolio server at the CMS:
 
 ```bash
-# portfolio/.env (local)
+# .env (local)
 PAYLOAD_API_URL=http://localhost:3001
 ```
-
-### CMS schema
-
-| Resource | Slug | Type | Key fields |
-|---|---|---|---|
-| Users | `users` | Collection | email, password (auth built-in) |
-| Media | `media` | Collection | file, alt, imageSizes: thumbnail (400px), og (1200×630) |
-| Projects | `projects` | Collection | title, description, thumbnail, tags, url, github, featured, year, status, order |
-| Site Config | `site-config` | Global | name, tagline, subtitle, sectionTitles, seo (metaTitle, metaDescription, ogImage) |
-| About | `about` | Global | bio (richText), skills array, photo |
-| Contact | `contact` | Global | email, ctaText, socials array (platform, url, label) |
-
-### Payload array-of-objects format
-
-Payload wraps every `array` field item in an object with an auto-generated `id`:
-
-```
-tags → [{ id: "abc", tag: "React" }]     (Payload API)
-     → ["React"]                          (after Zod transform)
-```
-
-The portfolio's Zod schemas handle this transparently via a union transform that
-accepts both the Payload object format AND plain strings (used in test fixtures).
-No change is needed in the consuming components — they always receive `string[]`.
 
 ---
 
@@ -214,22 +162,13 @@ Configure `PAYLOAD_API_URL` as a Wrangler environment variable in `wrangler.toml
 
 ### CMS — Railway.app
 
-```bash
-# From your Railway project, link the cms/ directory and set env vars
-railway up --service cms
-```
-
-Set the following environment variables in Railway:
+Push `cms/` to Railway. Set the following environment variables:
 
 | Variable | Description |
 |---|---|
-| `DATABASE_URI` | Supabase PostgreSQL connection string (SSL required) |
-| `PAYLOAD_SECRET` | Random 32-character secret (`openssl rand -hex 32`) |
-| `NEXT_PUBLIC_SERVER_URL` | The Railway public domain for this service |
-| `PORTFOLIO_URL` | `https://harihoudini.dev` (for CORS) |
-
-Railway uses `pnpm start` (configured in `cms/railway.json`) which runs `next start --port 3001`.
-The CMS build produces a standalone Next.js output for minimal image size.
+| `DATABASE_URI` | Supabase PostgreSQL connection string |
+| `PAYLOAD_SECRET` | Random 32-character secret |
+| `NEXT_PUBLIC_SERVER_URL` | The Railway deployment URL |
 
 ---
 
@@ -281,8 +220,8 @@ Every API response is validated at runtime via `schema.safeParse()`. A structura
 |---|---|---|
 | Phase 0 | ✅ Complete | PRD, architecture decisions, GitHub issue |
 | Phase 1 | ✅ Complete | Foundation: deps, build, CMS service layer, tests |
-| Phase 2 | ✅ Complete | Payload CMS v3: collections (Users, Media, Projects), globals (SiteConfig, About, Contact), Railway deploy config |
-| Phase 3 | 🔜 Next | 3D experience: galaxy + cyberpunk city + scroll |
+| Phase 2 | 🔜 Next | Payload CMS setup, collections, globals, REST API |
+| Phase 3 | Planned | 3D experience: galaxy + cyberpunk city + scroll |
 | Phase 4 | Planned | Content + polish: overlays, audio, mobile fallback, a11y |
 | Phase 5 | Planned | Deploy: Cloudflare Workers + Railway + Supabase |
 

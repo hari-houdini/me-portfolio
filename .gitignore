@@ -8,10 +8,3 @@
 
 # Test coverage output
 /coverage/
-
-# CMS (Payload + Next.js)
-/cms/node_modules/
-/cms/.next/
-/cms/media/
-/cms/.env
-/cms/payload-types.ts
