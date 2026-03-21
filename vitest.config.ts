@@ -34,6 +34,9 @@ export default defineConfig({
 				"app/test/**",
 				"app/**/__tests__/**",
 				"app/**/*.test.{ts,tsx}",
+				"app/**/*.unit.test.{ts,tsx}",
+				"app/**/*.component.test.{ts,tsx}",
+				"app/**/*.integration.test.{ts,tsx}",
 				// Generated files (react-router typegen)
 				"app/routes/+types/**",
 				// Route modules require the full RR7 server context to test.
