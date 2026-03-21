@@ -11,8 +11,8 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import rainFrag from "./rain.frag";
-import rainVert from "./rain.vert";
+import rainFrag from "./rain.shader.frag";
+import rainVert from "./rain.shader.vert";
 
 const RAIN_PARTICLE_COUNT = 20_000;
 const CITY_HALF_EXTENT = 80; // world units — covers the city footprint

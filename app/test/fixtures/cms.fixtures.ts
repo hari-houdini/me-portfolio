@@ -24,7 +24,7 @@ import {
 	PageDataSchema,
 	ProjectSchema,
 	SiteConfigSchema,
-} from "~/services/cms/cms.schemas";
+} from "~/services/cms/cms.schema";
 import type {
 	About,
 	Contact,

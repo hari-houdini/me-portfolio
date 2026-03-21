@@ -7,7 +7,7 @@
  *  - WorkOverlayProps, ProjectCardProps types
  */
 
-export type { ProjectCardProps } from "./project-card";
-export { ProjectCard } from "./project-card";
-export type { WorkOverlayProps } from "./work-overlay";
-export { WorkOverlay } from "./work-overlay";
+export type { ProjectCardProps } from "./project-card.iso.component";
+export { ProjectCard } from "./project-card.iso.component";
+export type { WorkOverlayProps } from "./work-overlay.iso.component";
+export { WorkOverlay } from "./work-overlay.iso.component";

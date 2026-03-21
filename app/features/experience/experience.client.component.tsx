@@ -25,9 +25,9 @@ import { useRef, useState } from "react";
 import { CityScene } from "~/features/city/mod";
 import { GalaxyScene } from "~/features/galaxy/mod";
 import type { About, Contact, Project, SiteConfig } from "~/services/cms/mod";
-import { CameraRig } from "./camera-rig";
-import { PostFx } from "./post-fx";
-import { SECTION_COUNT } from "./scroll-section";
+import { CameraRig } from "./camera-rig.client.component";
+import { PostFx } from "./post-fx.client.component";
+import { SECTION_COUNT } from "./scroll-section.util";
 
 // ---------------------------------------------------------------------------
 // Inner scene — reads scroll state from ScrollControls context

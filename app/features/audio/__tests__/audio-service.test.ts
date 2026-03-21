@@ -11,7 +11,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createAudioService } from "../audio-service";
+import { createAudioService } from "../audio.service";
 
 // ---------------------------------------------------------------------------
 // Web Audio API mock

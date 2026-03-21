@@ -15,7 +15,7 @@ import {
 	mockProjectRegular,
 	mockSiteConfig,
 } from "~/test/fixtures/cms.fixtures";
-import { WorkOverlay } from "../work-overlay";
+import { WorkOverlay } from "../work-overlay.iso.component";
 
 // Use a simple siteConfig for tests that assert on section title text
 // — zocker generates long multiline strings that getByText can't reliably match.

@@ -15,9 +15,9 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import galaxyFrag from "./galaxy.frag";
-import galaxyVert from "./galaxy.vert";
-import { type GalaxyConfig, generateGalaxy } from "./galaxy-generator";
+import { type GalaxyConfig, generateGalaxy } from "./galaxy.generator";
+import galaxyFrag from "./galaxy.shader.frag";
+import galaxyVert from "./galaxy.shader.vert";
 
 export const GALAXY_PARTICLE_COUNT = 150_000;
 

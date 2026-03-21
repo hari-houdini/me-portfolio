@@ -6,5 +6,5 @@
  *  - HeroOverlayProps type
  */
 
-export type { HeroOverlayProps } from "./hero-overlay";
-export { HeroOverlay } from "./hero-overlay";
+export type { HeroOverlayProps } from "./hero-overlay.iso.component";
+export { HeroOverlay } from "./hero-overlay.iso.component";

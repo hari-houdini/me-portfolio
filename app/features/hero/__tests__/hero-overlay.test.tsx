@@ -13,7 +13,7 @@ import {
 	mockSiteConfig,
 	mockSiteConfigMinimal,
 } from "~/test/fixtures/cms.fixtures";
-import { HeroOverlay } from "../hero-overlay";
+import { HeroOverlay } from "../hero-overlay.iso.component";
 
 describe("HeroOverlay: renders CMS data correctly", () => {
 	it("renders the owner name as an h1 heading", () => {

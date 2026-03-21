@@ -7,6 +7,6 @@
  *  - AudioState and AudioService types
  */
 
-export type { AudioService, AudioState } from "./audio-service";
-export { createAudioService } from "./audio-service";
-export { AudioToggle } from "./audio-toggle";
+export type { AudioService, AudioState } from "./audio.service";
+export { createAudioService } from "./audio.service";
+export { AudioToggle } from "./audio-toggle.client.component";

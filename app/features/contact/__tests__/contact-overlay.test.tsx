@@ -14,7 +14,7 @@ import {
 	mockContactMinimal,
 	mockSiteConfig,
 } from "~/test/fixtures/cms.fixtures";
-import { ContactOverlay } from "../contact-overlay";
+import { ContactOverlay } from "../contact-overlay.iso.component";
 
 // Use a simple siteConfig and contact for tests that assert on text content
 // — zocker generates long multiline strings that getByText can't reliably match.

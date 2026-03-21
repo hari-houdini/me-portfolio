@@ -6,5 +6,5 @@
  *  - AboutOverlayProps type
  */
 
-export type { AboutOverlayProps } from "./about-overlay";
-export { AboutOverlay } from "./about-overlay";
+export type { AboutOverlayProps } from "./about-overlay.iso.component";
+export { AboutOverlay } from "./about-overlay.iso.component";

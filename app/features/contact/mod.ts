@@ -6,5 +6,5 @@
  *  - ContactOverlayProps type
  */
 
-export type { ContactOverlayProps } from "./contact-overlay";
-export { ContactOverlay } from "./contact-overlay";
+export type { ContactOverlayProps } from "./contact-overlay.iso.component";
+export { ContactOverlay } from "./contact-overlay.iso.component";

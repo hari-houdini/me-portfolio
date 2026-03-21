@@ -18,4 +18,4 @@ export type {
 	ProjectsListResponse,
 	SiteConfig,
 	SocialLink,
-} from "./cms.schemas";
+} from "./cms.schema";

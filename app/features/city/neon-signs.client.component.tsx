@@ -14,7 +14,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import type { NeonSignData } from "./city-generator";
+import type { NeonSignData } from "./city.generator";
 
 interface NeonSignsProps {
 	signs: NeonSignData[];

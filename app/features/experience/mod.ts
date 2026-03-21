@@ -7,11 +7,11 @@
  *  - ScrollSection enum and SECTION_COUNT constant
  */
 
-export type { ExperienceProps } from "./experience";
-export { Experience } from "./experience";
-export type { ScrollSection as ScrollSectionType } from "./scroll-section";
+export type { ExperienceProps } from "./experience.client.component";
+export { Experience } from "./experience.client.component";
+export type { ScrollSection as ScrollSectionType } from "./scroll-section.util";
 export {
 	ScrollSection,
 	SECTION_COUNT,
 	SECTION_OFFSETS,
-} from "./scroll-section";
+} from "./scroll-section.util";

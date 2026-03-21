@@ -15,7 +15,7 @@ import {
 	mockAboutMinimal,
 	mockSiteConfig,
 } from "~/test/fixtures/cms.fixtures";
-import { AboutOverlay } from "../about-overlay";
+import { AboutOverlay } from "../about-overlay.iso.component";
 
 describe("AboutOverlay: renders CMS data correctly", () => {
 	it("renders the about section title from siteConfig", () => {

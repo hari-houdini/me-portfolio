@@ -12,11 +12,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { Buildings } from "./buildings";
-import { CarLights } from "./car-lights";
-import { generateCity } from "./city-generator";
-import { NeonSigns } from "./neon-signs";
-import { Rain } from "./rain";
+import { Buildings } from "./buildings.client.component";
+import { CarLights } from "./car-lights.client.component";
+import { generateCity } from "./city.generator";
+import { NeonSigns } from "./neon-signs.client.component";
+import { Rain } from "./rain.client.component";
 
 const CITY_Y_OFFSET = -80; // position city below the galaxy
 
