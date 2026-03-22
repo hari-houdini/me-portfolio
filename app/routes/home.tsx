@@ -113,14 +113,14 @@ export function meta({ data }: Route.MetaArgs) {
 
 /**
  * Section anchor scroll positions (0→1 of total scrollable height).
- * These must align with SECTION_OFFSETS in scroll-section.util.ts.
+ * Must align with SECTION_OFFSETS in scroll-section.util.ts.
  */
 const SNAP_ANCHORS = [0, 0.33, 0.66, 1] as const;
 
 /**
- * How much past a section boundary (in normalised offset units) the user
- * must scroll before the snap fires. Too low = snaps too eagerly;
- * too high = snap feels unresponsive. 0.12 = ~12% into the next section.
+ * How far past a section boundary the user must scroll before snap fires.
+ * 0.12 = 12% into the next section. Prevents accidental section changes
+ * from small scroll gestures while still feeling responsive.
  */
 const SNAP_THRESHOLD = 0.12;
 
@@ -150,6 +150,10 @@ function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 
 					gsap.registerPlugin(ScrollTrigger);
 
+					// normalizeScroll: normalise mouse wheel vs trackpad events so
+					// both deliver consistent velocity to the snap logic.
+					ScrollTrigger.normalizeScroll(true);
+
 					const trigger = ScrollTrigger.create({
 						trigger: scrollEl,
 						scroller: scrollEl,
@@ -168,19 +172,20 @@ function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 								return rawValue;
 							},
 							duration: { min: 0.3, max: 0.6 },
-							delay: 0.15,
+							delay: 0.25, // idle time before snap fires (up from 0.15)
 							ease: "power2.inOut",
 						},
 					});
 
 					cleanup = () => {
 						trigger.kill();
+						ScrollTrigger.normalizeScroll(false);
 						for (const t of ScrollTrigger.getAll()) t.kill();
 					};
 				}),
 			)
 			.catch(() => {
-				// GSAP failed to load — degrade gracefully (no snap, scroll still works)
+				// GSAP failed — degrade gracefully, scroll still works without snap
 			});
 
 		return () => {
@@ -332,8 +337,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 						/>
 					</div>
 
-					{/* Audio toggle — only visible in city section */}
-					{isSection3 && <AudioToggle />}
+					{/* Audio toggle — visible across all sections (prep for Tone.js) */}
+					<AudioToggle />
 				</div>
 			) : (
 				/* ----------------------------------------------------------------
