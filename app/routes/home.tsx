@@ -19,6 +19,7 @@ import { AboutOverlay, extractText } from "~/features/about/mod";
 import { AudioToggle } from "~/features/audio/mod";
 import { ContactOverlay } from "~/features/contact/mod";
 import { HeroOverlay } from "~/features/hero/mod";
+import { SectionNav } from "~/features/nav/mod";
 import { WorkOverlay } from "~/features/work/mod";
 import type { PageData } from "~/services/cms/mod";
 import { CmsService } from "~/services/cms/mod";
@@ -250,6 +251,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	// misaligned with the snap anchors at 0.33/0.66.
 	const isSection2 = scrollOffset >= 0.33 && scrollOffset < 0.66;
 	const isSection3 = scrollOffset >= 0.66;
+	// Numeric section index for SectionNav (0 = hero, 1 = about, 2 = work)
+	const section = isSection3 ? 2 : isSection2 ? 1 : 0;
 
 	// Enable GSAP snap only when drei's scroll element is available and 3D capable
 	useScrollSnap(snapEl, is3DCapable);
@@ -336,6 +339,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 							visible={isSection3}
 						/>
 					</div>
+
+					{/* Section navigation — liquid glass dots, fixed right side */}
+					<SectionNav
+						section={section as 0 | 1 | 2}
+						sectionTitles={siteConfig.sectionTitles}
+						scrollEl={snapEl}
+					/>
 
 					{/* Audio toggle — visible across all sections (prep for Tone.js) */}
 					<AudioToggle />
