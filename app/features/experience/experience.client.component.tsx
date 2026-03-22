@@ -1,20 +1,23 @@
 /**
- * experience.tsx — root Three.js canvas and scene orchestrator
+ * experience.client.component.tsx — root Three.js canvas and scene orchestrator
  *
  * This is the single entry point for all 3D rendering. It:
  *  1. Renders a fixed-position <Canvas> that covers the viewport
  *  2. Wraps everything in drei's <ScrollControls> for scroll-driven animation
  *  3. Mounts the <CameraRig> which drives camera along the bezier path
- *  4. Renders both scenes (galaxy + city) in a single scene graph — opacity
+ *  4. Renders both scenes (galaxy + warp) in a single scene graph — opacity
  *     transitions between them are driven by scroll progress
  *  5. Applies the post-processing effect stack via <PostFx>
  *
+ * Scroll architecture:
+ *  ScrollControls creates a private internal <div> (scroll.el) that it scrolls
+ *  by setting scrollTop directly — it intercepts all wheel events on the canvas.
+ *  This element is surfaced to home.tsx via onScrollElReady() so GSAP
+ *  ScrollTrigger can watch the correct scroller (not the page / window).
+ *
  * SSR safety:
  *  This file is imported via React.lazy() in home.tsx. The lazy boundary
- *  ensures Three.js never instantiates on the server. This file may safely
- *  import from three, @react-three/fiber, and @react-three/drei.
- *
- * Props are passed down from the home route loader (CMS data + scroll state).
+ *  ensures Three.js never instantiates on the server.
  */
 
 "use client";
@@ -35,19 +38,33 @@ import { SECTION_COUNT } from "./scroll-section.util";
 
 function SceneContent({
 	onScrollChange,
+	onScrollElReady,
 }: {
 	onScrollChange: (offset: number) => void;
+	/**
+	 * Called once with ScrollControls' internal scroll DOM element.
+	 * GSAP ScrollTrigger must watch this element (not the page/window)
+	 * because ScrollControls intercepts wheel events internally and
+	 * sets scrollTop on this div directly — the window never scrolls.
+	 */
+	onScrollElReady?: (el: HTMLElement) => void;
 }) {
 	const scroll = useScroll();
 	const rafRef = useRef<number>(0);
 
+	// Surface scroll.el to home.tsx exactly once after mount.
+	// scroll.el is the ScrollControls div — GSAP must use it as its scroller.
+	const elReportedRef = useRef(false);
+	if (!elReportedRef.current && scroll.el) {
+		elReportedRef.current = true;
+		onScrollElReady?.(scroll.el);
+	}
+
 	// Propagate scroll offset to parent on every frame for overlay positioning
-	// and post-FX parameterisation.  useFrame is not available outside Canvas
-	// so we use a rAF loop attached to the scroll object.
+	// and post-FX parameterisation. useFrame is not available outside Canvas
+	// so we use a rAF loop driven by the canvas animation frame.
 	const [scrollOffset, setScrollOffset] = useState(0);
 
-	// Sync scroll offset with parent via a callback on each fiber frame tick.
-	// We update state here to trigger re-renders for PostFx parameterisation.
 	const updateOffset = () => {
 		const o = scroll.offset;
 		setScrollOffset(o);
@@ -55,8 +72,7 @@ function SceneContent({
 		rafRef.current = requestAnimationFrame(updateOffset);
 	};
 
-	// Start the rAF loop once on mount — cancelled on unmount via effect.
-	// We use a vanilla ref flag to avoid starting it twice in StrictMode.
+	// Start the rAF loop once on mount — never restarted in StrictMode.
 	const started = useRef(false);
 	if (!started.current && typeof window !== "undefined") {
 		started.current = true;
@@ -99,9 +115,14 @@ export interface ExperienceProps {
 	contact: Contact;
 	projects: Project[];
 	onScrollChange?: (offset: number) => void;
+	/** Receives the ScrollControls internal scroll element for GSAP snap wiring */
+	onScrollElReady?: (el: HTMLElement) => void;
 }
 
-export function Experience({ onScrollChange = () => {} }: ExperienceProps) {
+export function Experience({
+	onScrollChange = () => {},
+	onScrollElReady,
+}: ExperienceProps) {
 	return (
 		<Canvas
 			style={{
@@ -120,7 +141,10 @@ export function Experience({ onScrollChange = () => {} }: ExperienceProps) {
 			dpr={[1, 2]}
 		>
 			<ScrollControls pages={SECTION_COUNT} damping={0.3}>
-				<SceneContent onScrollChange={onScrollChange} />
+				<SceneContent
+					onScrollChange={onScrollChange}
+					onScrollElReady={onScrollElReady}
+				/>
 			</ScrollControls>
 		</Canvas>
 	);
