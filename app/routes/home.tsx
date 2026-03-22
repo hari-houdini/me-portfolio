@@ -19,6 +19,7 @@ import { AboutOverlay } from "~/features/about/mod";
 import { AudioToggle } from "~/features/audio/mod";
 import { ContactOverlay } from "~/features/contact/mod";
 import { HeroOverlay } from "~/features/hero/mod";
+import { SectionNav } from "~/features/nav/mod";
 import { WorkOverlay } from "~/features/work/mod";
 import type { PageData } from "~/services/cms/mod";
 import { CmsService } from "~/services/cms/mod";
@@ -239,6 +240,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
 	// Section visibility thresholds (per section's scroll range 0→1)
 	const section = Math.round(scrollOffset * 2); // 0, 1, or 2
+	// isSection1 is used by HeroOverlay in Commit 3 (EncryptedText replay)
 	const isSection1 = section === 0;
 	const isSection2 = section === 1;
 	const isSection3 = section === 2;
@@ -332,6 +334,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 							visible={isSection3}
 						/>
 					</div>
+
+					{/* Section navigation — liquid glass dots, fixed right side */}
+					<SectionNav
+						section={section as 0 | 1 | 2}
+						sectionTitles={siteConfig.sectionTitles}
+						scrollEl={scrollEl}
+					/>
 
 					{/* Audio toggle — visible across all sections */}
 					<AudioToggle />
