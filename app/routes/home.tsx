@@ -303,6 +303,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 					<HeroOverlay
 						siteConfig={siteConfig}
 						scrollOffset={scrollOffset}
+						isSection1={isSection1}
 						introComplete
 						isMobile={false}
 					/>
