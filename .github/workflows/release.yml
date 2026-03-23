@@ -59,6 +59,8 @@ jobs:
   release:
     name: Create release
     runs-on: ubuntu-latest
+    # Secrets are stored at environment level — this grants access to them.
+    environment: production
 
     # Skip the workflow for the release commit itself to prevent infinite loops.
     # semantic-release appends "[skip ci]" to the release commit message.

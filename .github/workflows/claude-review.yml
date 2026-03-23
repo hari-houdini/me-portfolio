@@ -43,6 +43,8 @@ jobs:
   review:
     name: Claude code review
     runs-on: ubuntu-latest
+    # Secrets are stored at environment level — this grants access to them.
+    environment: production
 
     # Only fire on PR comments (not issue comments) that mention @claude,
     # posted by the repo owner. This prevents the workflow from running on
