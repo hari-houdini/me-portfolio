@@ -1,11 +1,37 @@
-.DS_Store
+# ─── Dependencies ─────────────────────────────────────────────────────────────
+# No leading slash — matches node_modules/ at any depth (root, cms/, sub-packages)
+node_modules/
+
+# ─── Environment & secrets ────────────────────────────────────────────────────
 .env
-/node_modules/
-cms/node_modules/
+.env.*
+!.env.example
+*.pem
 
-# React Router
-/.react-router/
+# ─── Build outputs ────────────────────────────────────────────────────────────
 /build/
+/dist/
+/.react-router/
 
-# Test coverage output
+# ─── Cloudflare / Wrangler ────────────────────────────────────────────────────
+.wrangler/
+
+# ─── Test & coverage ──────────────────────────────────────────────────────────
 /coverage/
+lhci_reports/
+
+# ─── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+
+# ─── OS artefacts ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+pnpm-debug.log*
+npm-debug.log*
+
+# ─── Claude Code ──────────────────────────────────────────────────────────────
+.claude/
+/agents/docs/local/
