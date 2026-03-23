@@ -65,12 +65,24 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
 
     steps:
+      - name: Validate RELEASE_TOKEN is configured
+        run: |
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "::error title=Missing secret::RELEASE_TOKEN is not set."
+            echo "::error::Setup: GitHub → Settings → Fine-grained tokens → new token"
+            echo "::error::Name: 'Portfolio release bot' | Repo: me-portfolio | Permissions: Contents Read+Write"
+            echo "::error::Then: Repo → Settings → Secrets → Actions → New secret → RELEASE_TOKEN"
+            exit 1
+          fi
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
       - name: Checkout (full history required by semantic-release)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # Use RELEASE_TOKEN so the push-back commit to main is authenticated
-          # with an account that has write access to the protected branch.
+          # RELEASE_TOKEN (Fine-grained PAT, Contents Read+Write) is required.
+          # The default GITHUB_TOKEN cannot push commits back to a protected branch.
           token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Setup pnpm
