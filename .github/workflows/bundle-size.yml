@@ -1,0 +1,123 @@
+# bundle-size.yml — Bundle size report on pull requests
+#
+# Runs pnpm build on every PR and posts a comment showing the Vite output
+# bundle sizes. Makes accidental bloat visible before merge.
+#
+# The comment is posted (or updated) on the PR. If the PR already has a
+# bundle size comment from a previous push, it is replaced — one comment
+# per PR, always current.
+#
+# Note: size comparison vs main will be added in Phase 5 once a stable
+# baseline build artifact is stored in GitHub Actions cache.
+
+name: Bundle Size
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: bundle-size-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+
+jobs:
+  bundle-size:
+    name: Report bundle size
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Report bundle sizes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require('child_process');
+
+            // Collect JS chunk sizes from the client build output
+            let chunks = '';
+            try {
+              chunks = execSync(
+                'find build/client -name "*.js" -not -name "*.map" | sort | xargs -I{} sh -c \'printf "%-60s %s\\n" "{}" "$(du -sh "{}" | cut -f1)"\'',
+                { encoding: 'utf8' }
+              ).trim();
+            } catch {
+              chunks = '(could not list chunks)';
+            }
+
+            // Total sizes for client and server builds
+            let totalClient = '?';
+            let totalServer = '?';
+            try {
+              totalClient = execSync('du -sh build/client 2>/dev/null | cut -f1', { encoding: 'utf8' }).trim();
+              totalServer = execSync('du -sh build/server 2>/dev/null | cut -f1', { encoding: 'utf8' }).trim();
+            } catch { /* ignore */ }
+
+            const body = [
+              '## Bundle Size Report',
+              '',
+              `| Build | Size |`,
+              `|---|---|`,
+              `| \`build/client\` (browser assets) | **${totalClient}** |`,
+              `| \`build/server\` (SSR worker)      | **${totalServer}** |`,
+              '',
+              '<details>',
+              '<summary>JavaScript chunks (client)</summary>',
+              '',
+              '```',
+              chunks,
+              '```',
+              '',
+              '</details>',
+              '',
+              `> Generated from commit \`${{ github.sha }}\``,
+            ].join('\n');
+
+            // Find and replace existing bundle size comment, or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              c.body.startsWith('## Bundle Size Report')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

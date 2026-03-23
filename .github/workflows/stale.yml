@@ -1,0 +1,66 @@
+# stale.yml — Auto-close inactive issues and pull requests
+#
+# Runs daily at 01:30 UTC.
+#
+# Timeline:
+#   Day 0:    Issue/PR opened or last updated
+#   Day 30:   Marked as stale with a comment
+#   Day 37:   Closed if still no activity
+#
+# Exempt labels (stale marker is never added):
+#   - pinned         — intentionally long-lived
+#   - security       — never auto-close security issues
+#   - wip            — work in progress, owner knows it
+#   - in-progress    — actively being worked on
+
+name: Stale
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch: # Allow manual run from the Actions tab
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark and close stale items
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # Issues
+          stale-issue-label: stale
+          stale-issue-message: >
+            This issue has been inactive for 30 days and has been marked as stale.
+            It will be closed in 7 days if there is no further activity.
+            Remove the `stale` label or add a comment to keep it open.
+          close-issue-message: >
+            This issue was closed automatically after 37 days of inactivity.
+            Reopen it if it is still relevant.
+
+          # Pull requests
+          stale-pr-label: stale
+          stale-pr-message: >
+            This pull request has been inactive for 30 days and has been marked as stale.
+            It will be closed in 7 days if there is no further activity.
+            Push a new commit or add a comment to keep it open.
+          close-pr-message: >
+            This pull request was closed automatically after 37 days of inactivity.
+            Reopen it if you would like to continue this work.
+
+          # Timing
+          days-before-stale: 30
+          days-before-close: 7
+
+          # Labels that prevent stale marking entirely
+          exempt-issue-labels: "pinned,security,wip,in-progress"
+          exempt-pr-labels: "pinned,wip,in-progress"
+
+          # Limit operations per run to avoid hitting API rate limits
+          operations-per-run: 30

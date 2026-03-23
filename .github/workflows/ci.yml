@@ -1,0 +1,66 @@
+# ci.yml — Quality gate
+#
+# Runs on every push to any branch and on every pull request.
+# All three steps must pass before a PR can be merged to main.
+#
+# Steps:
+#   1. biome ci   — read-only lint + format check (no auto-fix; fails on any issue)
+#   2. typecheck  — react-router typegen + tsc --noEmit (strict mode)
+#   3. test       — full Vitest suite (119 tests across 12 files)
+#
+# Branch protection setup (one-time manual step):
+#   Repo → Settings → Branches → Add rule for "main"
+#   → Require status checks: "Quality gate"
+#   → Require branches to be up to date before merging
+
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Cancel in-progress runs for the same branch when a new push arrives.
+# Saves runner minutes on rapid commits without losing final results.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # biome ci: read-only check — exits non-zero on ANY lint or format issue.
+      # Does NOT auto-fix files (unlike `pnpm check` which uses --write).
+      - name: Biome lint & format check
+        run: pnpm ci:check
+
+      # react-router typegen regenerates route types, then tsc --noEmit checks
+      # the full codebase in strict mode. Both must exit 0.
+      - name: TypeScript type check
+        run: pnpm typecheck
+
+      # Full Vitest suite. --run flag disables watch mode for CI.
+      - name: Test suite
+        run: pnpm test --run
