@@ -1,0 +1,104 @@
+# release.yml — Automated semantic releases on merge to main
+#
+# Triggers on every push to main (i.e. after a PR is merged).
+# semantic-release analyses conventional commits since the last tag,
+# determines the next version (feat → minor, fix → patch, BREAKING → major),
+# and if there are releasable commits:
+#   1. Bumps package.json version
+#   2. Writes / appends to CHANGELOG.md
+#   3. Commits both files back to main with "[skip ci]" to prevent re-trigger
+#   4. Creates a git tag (e.g. v1.2.0)
+#   5. Creates a GitHub Release with categorised release notes
+#
+# If no releasable commits exist (e.g. only chore/docs commits), no release
+# is created and the workflow exits cleanly.
+#
+# ─── REQUIRED SECRET ───────────────────────────────────────────────────────
+#
+# RELEASE_TOKEN — a Fine-grained Personal Access Token with write access.
+# The default GITHUB_TOKEN cannot push commits back to a protected branch.
+#
+# Setup steps:
+#   1. GitHub → Settings → Developer settings
+#      → Personal access tokens → Fine-grained tokens → Generate new token
+#   2. Token name: "Portfolio release bot"
+#   3. Repository access: Only "me-portfolio"
+#   4. Permissions:
+#      Contents: Read and Write
+#      Metadata: Read (required by default)
+#   5. Generate and copy the token
+#   6. Repo → Settings → Secrets and variables → Actions → New secret
+#      Name:  RELEASE_TOKEN
+#      Value: <paste the token>
+#
+# ─── BRANCH PROTECTION NOTE ─────────────────────────────────────────────────
+#
+# If main has branch protection requiring status checks, the RELEASE_TOKEN
+# must belong to an account that has admin/bypass rights, OR you must allow
+# the bot to bypass protection for the release commit.
+# ───────────────────────────────────────────────────────────────────────────
+
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+# Prevent concurrent releases if main receives multiple rapid pushes.
+concurrency:
+  group: release
+  cancel-in-progress: false  # Never cancel a release mid-flight
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Create release
+    runs-on: ubuntu-latest
+
+    # Skip the workflow for the release commit itself to prevent infinite loops.
+    # semantic-release appends "[skip ci]" to the release commit message.
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    steps:
+      - name: Checkout (full history required by semantic-release)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use RELEASE_TOKEN so the push-back commit to main is authenticated
+          # with an account that has write access to the protected branch.
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Semantic release
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          # @semantic-release/changelog — writes CHANGELOG.md
+          # @semantic-release/git       — commits package.json + CHANGELOG.md back to main
+          extra_plugins: |
+            @semantic-release/changelog@6
+            @semantic-release/git@10
+        env:
+          # RELEASE_TOKEN is used for both GitHub API calls and git push.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
