@@ -18,6 +18,8 @@
  * Cloudflare Worker compatibility will be validated end-to-end in Phase 5.
  */
 
+/// <reference types="@cloudflare/workers-types" />
+
 import { createRequestHandler } from "@react-router/cloudflare";
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
