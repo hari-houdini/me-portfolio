@@ -1,8 +1,12 @@
 /**
  * contact-overlay.tsx — HTML content overlay for the contact section
  *
- * Appears within Section 3 (city view), below the project list.
+ * Appears within Section 3 (warp tunnel view), below the project list.
  * Displays the portfolio owner's email, social links, and a CTA.
+ *
+ * Styling: on desktop, the content is wrapped in LiquidGlass to create a
+ * refractive glass pill that floats above the neon tunnel floor. On mobile,
+ * a plain document-flow block is rendered instead.
  *
  * Accessibility:
  *  - Email is selectable plain text — never an image or obfuscated string.
@@ -10,6 +14,7 @@
  *  - The section has a clear landmark heading.
  */
 
+import { LiquidGlass } from "~/features/nav/mod";
 import type { Contact, SiteConfig } from "~/services/cms/mod";
 
 export interface ContactOverlayProps {
@@ -48,53 +53,72 @@ export function ContactOverlay({
 				visible ? "opacity-100" : "opacity-0",
 			].join(" ");
 
+	// Content is shared between desktop (LiquidGlass) and mobile (plain div).
+	const content = (
+		<>
+			{/* Section heading */}
+			<p className="font-display text-xs tracking-[0.3em] uppercase text-[var(--color-neon-violet)] mb-4">
+				{sectionTitle}
+			</p>
+
+			{/* CTA text */}
+			<p className="font-display text-2xl lg:text-3xl font-light text-[var(--color-text-primary)] mb-6">
+				{ctaText}
+			</p>
+
+			{/* Email — plain selectable text */}
+			<a
+				href={`mailto:${email}`}
+				className="font-sans text-base lg:text-lg text-[var(--color-neon-cyan)] hover:underline"
+				aria-label={`Send email to ${email}`}
+			>
+				{email}
+			</a>
+
+			{/* Social links */}
+			{socials.length > 0 && (
+				<nav
+					className="mt-6 flex gap-4 justify-center"
+					aria-label="Social media links"
+				>
+					{socials.map((social) => {
+						const label =
+							PLATFORM_LABELS[social.platform.toLowerCase()] ?? social.label;
+						return (
+							<a
+								key={social.platform}
+								href={social.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="font-sans text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+								aria-label={`Visit ${label} profile`}
+							>
+								{label}
+							</a>
+						);
+					})}
+				</nav>
+			)}
+		</>
+	);
+
 	return (
 		<section className={wrapperClass} aria-label="Contact section">
-			<div className="pointer-events-auto">
-				{/* Section heading */}
-				<p className="font-display text-xs tracking-[0.3em] uppercase text-[var(--color-neon-violet)] mb-4">
-					{sectionTitle}
-				</p>
-
-				{/* CTA text */}
-				<p className="font-display text-2xl lg:text-3xl font-light text-[var(--color-text-primary)] mb-6">
-					{ctaText}
-				</p>
-
-				{/* Email — plain selectable text */}
-				<a
-					href={`mailto:${email}`}
-					className="font-sans text-base lg:text-lg text-[var(--color-neon-cyan)] hover:underline"
-					aria-label={`Send email to ${email}`}
+			{isMobile ? (
+				<div className="pointer-events-auto">{content}</div>
+			) : (
+				<LiquidGlass
+					className="pointer-events-auto px-10 py-8 text-center"
+					radius={20}
+					frost={0.08}
+					blur={10}
+					scale={-100}
+					gOffset={6}
+					bOffset={12}
 				>
-					{email}
-				</a>
-
-				{/* Social links */}
-				{socials.length > 0 && (
-					<nav
-						className="mt-6 flex gap-4 justify-center"
-						aria-label="Social media links"
-					>
-						{socials.map((social) => {
-							const label =
-								PLATFORM_LABELS[social.platform.toLowerCase()] ?? social.label;
-							return (
-								<a
-									key={social.platform}
-									href={social.url}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="font-sans text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-									aria-label={`Visit ${label} profile`}
-								>
-									{label}
-								</a>
-							);
-						})}
-					</nav>
-				)}
-			</div>
+					{content}
+				</LiquidGlass>
+			)}
 		</section>
 	);
 }
