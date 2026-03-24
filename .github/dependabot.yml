@@ -1,0 +1,69 @@
+# dependabot.yml — Automated dependency update pull requests
+#
+# Dependabot opens PRs every Monday at 09:00 UTC for:
+#   - npm dependencies (both production and dev)
+#
+# Each Dependabot PR will automatically trigger the CI workflow (ci.yml),
+# so updates that break tests are caught before they can be merged.
+#
+# Three.js, R3F, and Tone.js minor/major updates are ignored.
+# These libraries have visual and audio breaking changes that require
+# manual verification in the browser — they should be upgraded intentionally.
+# Patch updates (bug fixes only) are still allowed.
+#
+# Open PR limit is 5 to avoid inbox flooding. Dependabot will queue
+# remaining updates until open PRs are resolved.
+
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "UTC"
+
+    # Conventional commit style to match the project's commit convention
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+
+    # Label all Dependabot PRs for easy filtering
+    labels:
+      - dependencies
+
+    # Keep the queue manageable
+    open-pull-requests-limit: 5
+
+    # Group all minor + patch updates for devDependencies into a single PR
+    # to reduce noise. Security updates always get their own PR.
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+    ignore:
+      # Three.js — minor/major can break procedural geometry, shaders, or R3F
+      # compatibility. Upgrade manually after visual verification.
+      - dependency-name: "three"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@types/three"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+      # React Three Fiber — major/minor can alter the rendering pipeline or
+      # drei API in ways that require scene-level testing.
+      - dependency-name: "@react-three/fiber"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@react-three/drei"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "@react-three/postprocessing"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+      # Tone.js — minor/major can change the audio graph API or scheduling
+      # behaviour in ways that require audio testing in a real browser.
+      - dependency-name: "tone"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]

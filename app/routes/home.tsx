@@ -14,18 +14,12 @@
  */
 
 import { Effect } from "effect";
-import {
-	lazy,
-	Suspense,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
-import { AboutOverlay } from "~/features/about/mod";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { AboutOverlay, extractText } from "~/features/about/mod";
 import { AudioToggle } from "~/features/audio/mod";
 import { ContactOverlay } from "~/features/contact/mod";
 import { HeroOverlay } from "~/features/hero/mod";
+import { SectionNav } from "~/features/nav/mod";
 import { WorkOverlay } from "~/features/work/mod";
 import type { PageData } from "~/services/cms/mod";
 import { CmsService } from "~/services/cms/mod";
@@ -120,25 +114,31 @@ export function meta({ data }: Route.MetaArgs) {
 
 /**
  * Section anchor scroll positions (0→1 of total scrollable height).
- * These must align with SECTION_OFFSETS in scroll-section.util.ts.
+ * Must align with SECTION_OFFSETS in scroll-section.util.ts.
  */
 const SNAP_ANCHORS = [0, 0.33, 0.66, 1] as const;
 
 /**
- * How much past a section boundary (in normalised offset units) the user
- * must scroll before the snap fires. Too low = snaps too eagerly;
- * too high = snap feels unresponsive. 0.12 = ~12% into the next section.
+ * How far past a section boundary the user must scroll before snap fires.
+ * 0.12 = 12% into the next section. Prevents accidental section changes
+ * from small scroll gestures while still feeling responsive.
  */
 const SNAP_THRESHOLD = 0.12;
 
-function useScrollSnap(
-	containerRef: React.RefObject<HTMLElement | null>,
-	enabled: boolean,
-) {
+/**
+ * useScrollSnap — attaches GSAP ScrollTrigger to the ScrollControls internal
+ * scroll element (scroll.el), NOT to the page/window.
+ *
+ * Why: ScrollControls intercepts all wheel events and sets scrollTop on its
+ * own internal div. The window never scrolls. GSAP must watch that same div.
+ *
+ * scrollEl is passed up from SceneContent via onScrollElReady() once the
+ * canvas mounts and ScrollControls has initialised.
+ */
+function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 	useEffect(() => {
-		if (!enabled || !containerRef.current) return;
+		if (!enabled || !scrollEl) return;
 
-		// Dynamically import GSAP to keep it off the SSR critical path
 		let cleanup: (() => void) | undefined;
 
 		import("gsap")
@@ -146,56 +146,49 @@ function useScrollSnap(
 				import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
 					gsap.registerPlugin(ScrollTrigger);
 
-					const container = containerRef.current;
-					if (!container) return;
+					// normalizeScroll: normalise mouse wheel vs trackpad events so
+					// both deliver consistent velocity to the snap logic.
+					ScrollTrigger.normalizeScroll(true);
 
-					// Single scroll trigger covering the entire scroll container.
-					// snap.snapTo receives a function that returns the normalised target
-					// position [0,1] — we map our three anchors to this space.
 					const trigger = ScrollTrigger.create({
-						trigger: container,
+						// scroller: the ScrollControls div — GSAP watches THIS, not window
+						scroller: scrollEl,
+						trigger: scrollEl,
 						start: "top top",
 						end: "bottom bottom",
 						snap: {
-							// directional=true: only snap in the direction of scroll
-							// inertia=false: let ScrollTrigger own the momentum
 							snapTo: (rawValue: number) => {
-								// rawValue is progress 0→1 of the scroll container
 								for (let i = 0; i < SNAP_ANCHORS.length - 1; i++) {
 									const lo = SNAP_ANCHORS[i];
 									const hi = SNAP_ANCHORS[i + 1];
-									// If we are within one section zone…
 									if (rawValue >= lo && rawValue <= hi) {
 										const mid = lo + (hi - lo) * SNAP_THRESHOLD;
-										// …snap back to section start until past threshold
 										return rawValue < mid ? lo : hi;
 									}
 								}
 								return rawValue;
 							},
 							duration: { min: 0.3, max: 0.6 },
-							// delay: how long the user must be idle before snap fires
-							// 0.15s gives enough window to scroll intentionally without
-							// the snap fighting the gesture
-							delay: 0.15,
+							delay: 0.25, // idle time before snap fires (up from 0.15)
 							ease: "power2.inOut",
 						},
 					});
 
 					cleanup = () => {
 						trigger.kill();
+						ScrollTrigger.normalizeScroll(false);
 						for (const t of ScrollTrigger.getAll()) t.kill();
 					};
 				}),
 			)
 			.catch(() => {
-				// GSAP failed to load — degrade gracefully (no snap, scroll still works)
+				// GSAP failed — degrade gracefully, scroll still works without snap
 			});
 
 		return () => {
 			cleanup?.();
 		};
-	}, [containerRef, enabled]);
+	}, [scrollEl, enabled]);
 }
 
 // ---------------------------------------------------------------------------
@@ -206,13 +199,7 @@ function useIs3DCapable() {
 	const [capable, setCapable] = useState(false);
 
 	useEffect(() => {
-		// Run only on client after hydration
-		const isWide = window.innerWidth >= 1024;
-		const prefersReduced = window.matchMedia(
-			"(prefers-reduced-motion: reduce)",
-		).matches;
-
-		// Check WebGL2 support
+		// WebGL2 support is static — check once and cache the result.
 		let hasWebGL = false;
 		try {
 			const canvas = document.createElement("canvas");
@@ -221,7 +208,21 @@ function useIs3DCapable() {
 			hasWebGL = false;
 		}
 
-		setCapable(isWide && !prefersReduced && hasWebGL);
+		const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+		function evaluate() {
+			const isWide = window.innerWidth >= 1024;
+			setCapable(isWide && !motionQuery.matches && hasWebGL);
+		}
+
+		// Initial evaluation on mount.
+		evaluate();
+
+		// Re-evaluate whenever the OS accessibility setting changes mid-session
+		// (e.g. user toggles "Reduce Motion" in System Settings while browsing).
+		// This immediately unmounts the canvas and shows the static fallback.
+		motionQuery.addEventListener("change", evaluate);
+		return () => motionQuery.removeEventListener("change", evaluate);
 	}, []);
 
 	return capable;
@@ -234,7 +235,10 @@ function useIs3DCapable() {
 export default function Home({ loaderData }: Route.ComponentProps) {
 	const { siteConfig, about, contact, projects } = loaderData;
 	const is3DCapable = useIs3DCapable();
-	const containerRef = useRef<HTMLDivElement>(null);
+
+	// scrollEl: the ScrollControls internal div, surfaced from inside the canvas.
+	// GSAP watches this element, not the page. Set via onScrollElReady callback.
+	const [scrollEl, setScrollEl] = useState<HTMLElement | null>(null);
 
 	// Track scroll progress for overlay visibility
 	const [scrollOffset, setScrollOffset] = useState(0);
@@ -244,42 +248,67 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
 	// Section visibility thresholds (per section's scroll range 0→1)
 	const section = Math.round(scrollOffset * 2); // 0, 1, or 2
+	// isSection1 is used by HeroOverlay in Commit 3 (EncryptedText replay)
+	const isSection1 = section === 0;
 	const isSection2 = section === 1;
 	const isSection3 = section === 2;
 
-	// Enable GSAP snap only when canvas is mounted and 3D capable
-	useScrollSnap(containerRef, is3DCapable);
+	// Enable GSAP snap once the canvas has mounted and surfaced scroll.el
+	useScrollSnap(scrollEl, is3DCapable);
 
 	return (
 		<>
 			{/* ----------------------------------------------------------------
-			    Visually-hidden but screen-reader-accessible content.
-			    Always present regardless of 3D canvas support.
-			    ---------------------------------------------------------------- */}
+                Visually-hidden but screen-reader-accessible content.
+                Always present regardless of 3D canvas support. Provides the
+                full portfolio content to assistive technology independently of
+                the 3D canvas experience.
+                ---------------------------------------------------------------- */}
 			<div className="sr-only" aria-hidden="false">
 				<h1>{siteConfig.name}</h1>
 				<p>{siteConfig.tagline}</p>
-				<p>
-					{typeof about.bio === "object" && about.bio !== null
-						? JSON.stringify(about.bio)
-						: ""}
-				</p>
-				<ul>
+				{siteConfig.subtitle && <p>{siteConfig.subtitle}</p>}
+
+				<h2>{siteConfig.sectionTitles.about}</h2>
+				<p>{extractText(about.bio)}</p>
+				{about.skills.length > 0 && (
+					<ul aria-label="Skills and technologies">
+						{about.skills.map((skill) => (
+							<li key={skill}>{skill}</li>
+						))}
+					</ul>
+				)}
+
+				<h2>{siteConfig.sectionTitles.work}</h2>
+				<ul aria-label="Projects">
 					{projects.map((p) => (
-						<li key={p.id}>{p.title}</li>
+						<li key={p.id}>
+							<strong>{p.title}</strong>
+							{p.description ? ` — ${p.description}` : ""}
+							{p.year ? ` (${p.year})` : ""}
+						</li>
 					))}
 				</ul>
-				<p>{contact.email}</p>
+
+				<h2>{siteConfig.sectionTitles.contact}</h2>
+				<p>{contact.ctaText}</p>
+				<a href={`mailto:${contact.email}`}>{contact.email}</a>
+				{contact.socials.length > 0 && (
+					<ul aria-label="Social links">
+						{contact.socials.map((s) => (
+							<li key={s.platform}>
+								<a href={s.url}>{s.label}</a>
+							</li>
+						))}
+					</ul>
+				)}
 			</div>
 
 			{/* ----------------------------------------------------------------
 			    3D Experience — desktop with WebGL2 support only
 			    ---------------------------------------------------------------- */}
 			{is3DCapable ? (
-				<div
-					ref={containerRef}
-					style={{ width: "100vw", height: "100vh", overflow: "hidden" }}
-				>
+				<div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
 					<Suspense
 						fallback={
 							<div className="fixed inset-0 flex items-center justify-center bg-[var(--color-void)]">
@@ -295,6 +324,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 							contact={contact}
 							projects={projects}
 							onScrollChange={handleScrollChange}
+							onScrollElReady={setScrollEl}
 						/>
 					</Suspense>
 
@@ -302,6 +332,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 					<HeroOverlay
 						siteConfig={siteConfig}
 						scrollOffset={scrollOffset}
+						isSection1={isSection1}
 						introComplete
 						isMobile={false}
 					/>
@@ -339,8 +370,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 						/>
 					</div>
 
-					{/* Audio toggle — only visible in city section */}
-					{isSection3 && <AudioToggle />}
+					{/* Section navigation — liquid glass dots, fixed right side */}
+					<SectionNav
+						section={section as 0 | 1 | 2}
+						sectionTitles={siteConfig.sectionTitles}
+						scrollEl={scrollEl}
+					/>
+
+					{/* Audio toggle — visible across all sections */}
+					<AudioToggle />
 				</div>
 			) : (
 				/* ----------------------------------------------------------------

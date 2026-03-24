@@ -1,6 +1,7 @@
 .DS_Store
 .env
 /node_modules/
+cms/node_modules/
 
 # React Router
 /.react-router/
@@ -15,3 +16,6 @@
 /cms/media/
 /cms/.env
 /cms/payload-types.ts
+
+# Local session memory — never push to remote
+/agents/docs/local/

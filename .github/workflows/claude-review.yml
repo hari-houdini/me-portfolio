@@ -1,0 +1,176 @@
+# claude-review.yml — AI-powered PR code review
+#
+# Triggers when you mention @claude in any PR comment or review comment.
+# Claude reads the full diff + all changed files and posts:
+#   - Inline code comments on specific lines
+#   - A top-level PR review comment summarising findings
+#
+# Authentication: CLAUDE_CODE_OAUTH_TOKEN (Claude Pro subscription).
+# Zero additional cost — uses your existing claude.ai Pro plan.
+#
+# ─── ONE-TIME SETUP REQUIRED ───────────────────────────────────────────────
+#
+# 1. Install the Claude GitHub App on this repository:
+#    https://github.com/apps/claude
+#
+# 2. Generate your OAuth token (uses your Claude Pro subscription):
+#    In your terminal:  claude setup-token
+#    Copy the printed token.
+#
+# 3. Add it as a repository secret:
+#    Repo → Settings → Secrets and variables → Actions → New secret
+#    Name:  CLAUDE_CODE_OAUTH_TOKEN
+#    Value: <paste the token from step 2>
+#
+# ─── USAGE ─────────────────────────────────────────────────────────────────
+#
+# On any pull request, post a comment containing "@claude":
+#   @claude review this PR
+#   @claude check this against our conventions
+#
+# Claude will immediately start reviewing and post results to the PR.
+# ───────────────────────────────────────────────────────────────────────────
+
+name: Claude PR Review
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  review:
+    name: Claude code review
+    runs-on: ubuntu-latest
+    # Secrets are stored at environment level — this grants access to them.
+    environment: production
+
+    # Only fire on PR comments (not issue comments) that mention @claude,
+    # posted by the repo owner. This prevents the workflow from running on
+    # every comment and from being triggered by untrusted users.
+    if: |
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request != null &&
+        contains(github.event.comment.body, '@claude')
+      ) || (
+        github.event_name == 'pull_request_review_comment' &&
+        contains(github.event.comment.body, '@claude')
+      )
+
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Claude code review
+        uses: anthropics/claude-code-action@v1
+        with:
+          # OAuth token from your Claude Pro subscription (zero API cost).
+          # Generated via: claude setup-token
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # Project-specific review checklist.
+          # Claude reads the full diff AND the complete content of every
+          # changed file before reviewing.
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+
+            Perform an exhaustive, line-by-line code review of this pull request.
+            Be specific — reference exact file names and line numbers for every finding.
+            Do not give praise for things that are merely correct. Focus on problems,
+            risks, and improvements. Every finding must be actionable.
+
+            Review against these project standards:
+
+            ## Architecture & Pod Structure
+            - [ ] Each feature lives in app/features/<pod>/ — no cross-cutting logic in a single file
+            - [ ] mod.ts barrel is the ONLY public export surface — external code never imports internal paths
+            - [ ] mod.ts exports only the minimum needed — implementation details stay private
+            - [ ] File suffix convention enforced:
+                  *.client.component.tsx  → CSR only (Three.js, browser APIs)
+                  *.iso.component.tsx     → SSR + hydration safe
+                  *.service.ts            → Effect-ts service layers / factories
+                  *.repository.ts         → Raw data access
+                  *.schema.ts             → Zod schema definitions
+                  *.generator.ts          → Pure TS geometry/data generators
+                  *.util.ts               → Shared constants and utilities
+                  *.unit.test.ts          → Vitest unit tests (node env)
+                  *.component.test.tsx    → Vitest component tests (jsdom env)
+
+            ## TypeScript Strictness
+            - [ ] No implicit `any` — every variable and function parameter is typed
+            - [ ] No `// @ts-ignore` or `// @ts-expect-error` without an explanation comment
+            - [ ] Types are derived from Zod schemas via `z.infer<>` — never written by hand
+            - [ ] No unsafe type assertions (`as SomeType`) without documented justification
+            - [ ] `strict: true` compliance — no implicit returns, no unused parameters
+
+            ## Effect-ts (CMS service layer only)
+            - [ ] Errors are `Data.TaggedError` subclasses — never plain `new Error()`
+            - [ ] Effects are composed with `Effect.gen` / `.pipe` — no bare `try/catch` inside Effects
+            - [ ] `Layer` / `Context.Tag` DI pattern is followed — no `new Service()` in callers
+            - [ ] Effect-ts is NEVER used in React components or Three.js code
+
+            ## React & SSR Safety
+            - [ ] `*.client.component.tsx` files are never statically imported from SSR paths
+            - [ ] `useEffect` dependency arrays are exhaustive — no missing deps
+            - [ ] No `window`, `document`, or `navigator` access at module scope or during SSR
+            - [ ] `React.lazy` + `Suspense` used for all Three.js canvas components
+
+            ## Three.js / React Three Fiber
+            - [ ] Geometries and materials are memoized (`useMemo`) — not recreated on every render
+            - [ ] All Three.js objects call `.dispose()` in the `useEffect` cleanup or `onUnmount`
+            - [ ] No direct DOM manipulation inside R3F components
+            - [ ] GLSL shaders are imported as typed strings via vite-plugin-glsl, not inline template literals
+
+            ## Tone.js (audio pod)
+            - [ ] `import('tone')` is dynamic and only called on first user gesture (autoplay policy)
+            - [ ] Every Tone.js node has a corresponding `.dispose()` call in `dispose()`
+            - [ ] State machine transitions follow idle → playing → idle / idle → error exactly
+            - [ ] `setSection()` crossfades via `Volume.rampTo()` — no abrupt cuts
+
+            ## Testing
+            - [ ] Every new exported function or component has at least one test
+            - [ ] Unit tests are in `*.unit.test.ts` files with `// @vitest-environment node` (default)
+            - [ ] Component tests are in `*.component.test.tsx` with `// @vitest-environment jsdom`
+            - [ ] Tests query elements by accessible role/label — NEVER by CSS class or component name
+            - [ ] Vitest constructor mocks use `function(this) { this.x = ... }` pattern
+              (Vite/esbuild transpiles `function() { return obj }` → `() => obj`, breaking `new`)
+            - [ ] New MSW handlers match the correct HTTP method and URL pattern
+
+            ## Accessibility
+            - [ ] Interactive widgets with complex keyboard patterns use React Aria Components
+              (currently used: RadioGroup + Radio in SectionNav)
+            - [ ] `aria-label` is only on interactive or landmark elements — not decorative divs
+            - [ ] All images have meaningful `alt` text, or `alt=""` + `aria-hidden="true"` if decorative
+            - [ ] New focusable elements have visible focus rings
+            - [ ] Screen-reader-only content uses the `sr-only` Tailwind class, not `display:none`
+
+            ## Code Quality
+            - [ ] No `console.log`, `console.warn`, or `console.error` left in production code
+            - [ ] No commented-out code blocks
+            - [ ] No hardcoded secrets, API URLs, or environment-specific values outside env vars
+            - [ ] Functions have a single clear responsibility (SRP)
+            - [ ] Magic numbers have named constants
+
+            ## Commit Hygiene (if commits are visible)
+            - [ ] Commit messages follow the convention: `type(scope): description`
+                  Types: feat | fix | refactor | chore | test | docs | style | build
+
+            Post inline comments on specific lines for each issue found.
+            Post a single top-level PR comment with a concise summary of:
+              - Critical issues (must fix before merge)
+              - Suggestions (should fix, not blocking)
+              - Positives (optional — only if something is notably well done)
+
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read"

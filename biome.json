@@ -6,8 +6,8 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false,
-		"includes": ["**", "!**/*.css", "!coverage", "!build"]
+		"ignoreUnknown": true,
+		"includes": ["**", "!**/*.css", "!coverage", "!build", "!cms", "!.github/"]
 	},
 	"formatter": {
 		"enabled": true,

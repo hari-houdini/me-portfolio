@@ -10,6 +10,7 @@
 		"format": "biome format --write",
 		"lint": "biome lint --write",
 		"check": "biome check --write",
+		"ci:check": "biome ci .",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
@@ -34,6 +35,7 @@
 		"react-dom": "^19.2.4",
 		"react-router": "7.12.0",
 		"three": "^0.183.2",
+		"tone": "^15.1.22",
 		"zocker": "^3.0.0",
 		"zod": "^4.3.6"
 	},

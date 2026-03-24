@@ -1,6 +1,29 @@
 @import "tailwindcss";
 
 /* ============================================================
+   Self-hosted variable fonts
+   Files live in /public/fonts/ — served at build time from the
+   same origin, enabling rel=preload hints in root.tsx.
+   Google Fonts is no longer used; no third-party DNS lookup needed.
+   ============================================================ */
+
+@font-face {
+  font-family: "Outfit";
+  src: url("/fonts/outfit-variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/space-grotesk-variable.woff2") format("woff2-variations");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
    Typography — Tailwind v4 theme tokens
    ============================================================ */
 

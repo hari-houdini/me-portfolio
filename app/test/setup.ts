@@ -18,6 +18,20 @@ import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import { server } from "./msw/server";
 
+// ---------------------------------------------------------------------------
+// Browser API polyfills for jsdom
+// ---------------------------------------------------------------------------
+
+// ResizeObserver — used by LiquidGlass and other components that track
+// element size. jsdom does not implement it; stub with a no-op class.
+if (typeof globalThis.ResizeObserver === "undefined") {
+	globalThis.ResizeObserver = class ResizeObserver {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+}
+
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 
 afterEach(() => {

@@ -11,18 +11,22 @@ import type { Route } from "./+types/root";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
-	{ rel: "preconnect", href: "https://fonts.googleapis.com" },
+	// Preload self-hosted variable fonts — eliminates the extra Google Fonts
+	// DNS lookup + CSS fetch round-trip and gives the browser the WOFF2 URLs
+	// before the CSS parser encounters the @font-face declarations.
 	{
-		rel: "preconnect",
-		href: "https://fonts.gstatic.com",
+		rel: "preload",
+		href: "/fonts/outfit-variable.woff2",
+		as: "font",
+		type: "font/woff2",
 		crossOrigin: "anonymous",
 	},
-	// Outfit — used for all 3D text titles (drei <Text>) and display headings
-	// Space Grotesk — used for body and UI copy
-	// Inter — fallback for system contexts
 	{
-		rel: "stylesheet",
-		href: "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+		rel: "preload",
+		href: "/fonts/space-grotesk-variable.woff2",
+		as: "font",
+		type: "font/woff2",
+		crossOrigin: "anonymous",
 	},
 ];
 
