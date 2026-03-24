@@ -15,7 +15,7 @@
 
 import { Effect } from "effect";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { AboutOverlay } from "~/features/about/mod";
+import { AboutOverlay, extractText } from "~/features/about/mod";
 import { AudioToggle } from "~/features/audio/mod";
 import { ContactOverlay } from "~/features/contact/mod";
 import { HeroOverlay } from "~/features/hero/mod";
@@ -251,23 +251,49 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	return (
 		<>
 			{/* ----------------------------------------------------------------
-			    Visually-hidden but screen-reader-accessible content.
-			    Always present regardless of 3D canvas support.
-			    ---------------------------------------------------------------- */}
+                Visually-hidden but screen-reader-accessible content.
+                Always present regardless of 3D canvas support. Provides the
+                full portfolio content to assistive technology independently of
+                the 3D canvas experience.
+                ---------------------------------------------------------------- */}
 			<div className="sr-only" aria-hidden="false">
 				<h1>{siteConfig.name}</h1>
 				<p>{siteConfig.tagline}</p>
-				<p>
-					{typeof about.bio === "object" && about.bio !== null
-						? JSON.stringify(about.bio)
-						: ""}
-				</p>
-				<ul>
+				{siteConfig.subtitle && <p>{siteConfig.subtitle}</p>}
+
+				<h2>{siteConfig.sectionTitles.about}</h2>
+				<p>{extractText(about.bio)}</p>
+				{about.skills.length > 0 && (
+					<ul aria-label="Skills and technologies">
+						{about.skills.map((skill) => (
+							<li key={skill}>{skill}</li>
+						))}
+					</ul>
+				)}
+
+				<h2>{siteConfig.sectionTitles.work}</h2>
+				<ul aria-label="Projects">
 					{projects.map((p) => (
-						<li key={p.id}>{p.title}</li>
+						<li key={p.id}>
+							<strong>{p.title}</strong>
+							{p.description ? ` — ${p.description}` : ""}
+							{p.year ? ` (${p.year})` : ""}
+						</li>
 					))}
 				</ul>
-				<p>{contact.email}</p>
+
+				<h2>{siteConfig.sectionTitles.contact}</h2>
+				<p>{contact.ctaText}</p>
+				<a href={`mailto:${contact.email}`}>{contact.email}</a>
+				{contact.socials.length > 0 && (
+					<ul aria-label="Social links">
+						{contact.socials.map((s) => (
+							<li key={s.platform}>
+								<a href={s.url}>{s.label}</a>
+							</li>
+						))}
+					</ul>
+				)}
 			</div>
 
 			{/* ----------------------------------------------------------------

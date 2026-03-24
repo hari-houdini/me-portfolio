@@ -4,9 +4,9 @@
  * Displays the portfolio owner's bio, skills, and an optional photo.
  * The overlay fades in as the camera locks to the top-down position.
  *
- * The bio field is a Lexical rich-text document. For Phase 3, it is rendered
- * as plain text paragraphs extracted from the Lexical AST. A full Lexical
- * renderer can be wired in Phase 4 if needed.
+ * The bio field is a Lexical rich-text document. Plain text is extracted from
+ * the Lexical AST via `extractText` — exported so other modules (home.tsx
+ * sr-only block) can reuse the same extractor without duplicating logic.
  *
  * Accessibility:
  *  - Skills are rendered as a visually styled list with proper list semantics.
@@ -33,7 +33,7 @@ interface LexicalNode {
 	children?: LexicalNode[];
 }
 
-function extractText(node: unknown): string {
+export function extractText(node: unknown): string {
 	if (!node || typeof node !== "object") return "";
 	const n = node as LexicalNode;
 	if (n.type === "text" && typeof n.text === "string") return n.text;
