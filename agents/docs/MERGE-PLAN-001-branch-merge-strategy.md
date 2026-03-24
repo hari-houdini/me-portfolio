@@ -384,26 +384,45 @@ This is the highest-complexity rebase. Phase 3 significantly modifies `app/route
 
 #### Pipeline contingency (Phase 3 only)
 
-If the CI Quality Gate fails on a specific step due to an issue that is definitively resolved only in Phase 4, apply a targeted step-level stub:
+**`continue-on-error: true` on the required Quality Gate is not an acceptable mitigation.** It silently masks real build errors on the step that branch protection requires to pass, and there is no automated enforcement of the "remove before merge" clause.
+
+If the CI Quality Gate fails on a specific step due to an issue that is definitively resolved only in Phase 4, the correct approach is to add a **dedicated optional CI job** in `ci.yml` that runs the flaky check in isolation — separate from the required `quality` job:
 
 ```yaml
-# ci.yml — TEMPORARY stub for Phase 3 PR review window only
-- name: TypeScript type check
-  run: pnpm typecheck
-  continue-on-error: true   # TEMP: remove before merge — tracked in PR description
+# ci.yml — add alongside the existing required `quality` job
+  typecheck-phase3-preview:
+    name: Typecheck preview (non-blocking)
+    runs-on: ubuntu-latest
+    # Only runs on the Phase 3 PR branch. Does not block merge.
+    if: contains(github.head_ref, 'phase-3')
+    continue-on-error: true   # Isolated to this non-required job only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
 ```
 
-Add this as a labelled commit:
+Add this as a labelled commit on the Phase 3 branch:
 ```bash
-git commit -m "chore(ci): temp continue-on-error on typecheck for Phase 3 PR review
+git commit -m "chore(ci): add non-blocking typecheck preview job for Phase 3 PR
 
-Phase 4 resolves <specific issue>. This stub allows the PR to be
-reviewed while the underlying issue is documented. Must be reverted
-before merge — see PR description.
+The required Quality Gate job remains unmodified and must still pass.
+This optional job surfaces typecheck output for review without blocking
+the merge. Remove this job after Phase 3 merges.
 [ci-stub]"
 ```
 
-**This stub must be reverted before Phase 3 is merged.** Add it to the PR checklist.
+Key differences from the `continue-on-error` approach:
+- The **required** `quality` job is never touched — branch protection still enforces it
+- The optional job is scoped to Phase 3 branches only via the `if:` condition
+- Failure is visible and reported in CI without blocking the gate
+- The `[ci-stub]` label in the commit message makes it grep-able for removal
+
+**This job must be removed before Phase 3 is merged.** Add it to the PR checklist.
 
 #### Push and open PR
 
@@ -416,12 +435,12 @@ Open PR: `refactor/phase-3` → `main`
 **PR description must include:**
 - All sub-phases covered (01 through 07 + refactor)
 - Note on the warp tunnel replacing the original cyberpunk city (and why)
-- Any active `continue-on-error` stubs and the commit SHA of each
-- Checklist item: "[ ] Remove all [ci-stub] commits before merge"
+- If a `typecheck-phase3-preview` job was added: its commit SHA and the explicit checklist item below
+- Checklist item: "[ ] Remove all [ci-stub] commits before merge (grep: `git log --oneline --grep='\[ci-stub\]'`)"
 
 #### Gates
 
-CI green (or green with documented stubs removed) → `@claude review this PR` → iterate → Claude APPROVE → merge.
+Required `quality` job green → `@claude review this PR` → iterate → Claude APPROVE → merge.
 
 ---
 
