@@ -50,7 +50,7 @@ export function WorkOverlay({
 
 	return (
 		<section className={wrapperClass} aria-label="Work section">
-			<div className="pointer-events-auto">
+			<div className="pointer-events-auto rounded-xl bg-black/15 backdrop-blur-sm p-4 pb-16">
 				{/* Section heading */}
 				<p className="font-display text-xs tracking-[0.3em] uppercase text-[var(--color-neon-pink)] mb-6">
 					{sectionTitle}
