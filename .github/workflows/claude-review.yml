@@ -1,35 +1,53 @@
-# claude-review.yml — AI-powered PR code review
+# claude-review.yml — AI-powered PR code review with formal hard-gate approval
 #
 # Triggers when you mention @claude in any PR comment or review comment.
-# Claude reads the full diff + all changed files and posts:
-#   - Inline code comments on specific lines
-#   - A top-level PR review comment summarising findings
+# Claude reads the full diff + all changed files, posts inline comments,
+# and submits a formal GitHub PR review (APPROVE or REQUEST_CHANGES).
 #
-# Authentication: CLAUDE_CODE_OAUTH_TOKEN (Claude Pro subscription).
-# Zero additional cost — uses your existing claude.ai Pro plan.
+# ─── HOW THE HARD GATE WORKS ──────────────────────────────────────────────────
 #
-# ─── ONE-TIME SETUP REQUIRED ───────────────────────────────────────────────
+# 1. You comment "@claude review this PR" in a PR
+# 2. Claude analyses the diff and posts inline comments
+# 3. Claude submits a formal review:
+#      - REQUEST_CHANGES → merge button disabled (branch protection blocks merge)
+#      - APPROVE         → merge button active (combined with CI Quality Gate)
+# 4. You fix any critical issues and push a new commit (stale review dismissed)
+# 5. You comment "@claude re-review" — Claude verifies fixes and updates the review
+# 6. Once Claude APPROVEs + CI is green → you can merge
 #
-# 1. Install the Claude GitHub App on this repository:
-#    https://github.com/apps/claude
+# ─── PHASE-AWARE REVIEW ───────────────────────────────────────────────────────
 #
-# 2. Generate your OAuth token (uses your Claude Pro subscription):
-#    In your terminal:  claude setup-token
-#    Copy the printed token.
+# The workflow auto-detects the PR's head branch and injects a phase-specific
+# review focus block into the prompt:
 #
-# 3. Add it as a repository secret:
-#    Repo → Settings → Secrets and variables → Actions → New secret
-#    Name:  CLAUDE_CODE_OAUTH_TOKEN
-#    Value: <paste the token from step 2>
+#   feat/phase-1*     → Effect-ts, Zod schemas, MSW tests, CMS service layer
+#   feat/phase-2*     → Payload CMS schema, access control, cms/ isolation
+#   refactor/phase-3
+#   feat/phase-3*     → Three.js SSR boundary, dispose(), useMemo, GLSL imports
+#   feat/phase-4*     → React Aria, Tone.js lifecycle, a11y, fonts, glassmorphism
 #
-# ─── USAGE ─────────────────────────────────────────────────────────────────
+# ─── BRANCH PROTECTION REQUIREMENT ───────────────────────────────────────────
 #
-# On any pull request, post a comment containing "@claude":
-#   @claude review this PR
-#   @claude check this against our conventions
+# For Claude's approval to technically block the merge button, configure:
+#   Repo → Settings → Branches → Edit rule for "main"
+#   → Require pull request before merging
+#   → Required approvals: 1
+#   → Dismiss stale reviews when new commits are pushed: ✅
+#   → Require status checks to pass (Quality gate): ✅
+#   → Require branches to be up to date before merging: ✅
 #
-# Claude will immediately start reviewing and post results to the PR.
-# ───────────────────────────────────────────────────────────────────────────
+# ─── AUTHENTICATION ───────────────────────────────────────────────────────────
+#
+# CLAUDE_CODE_OAUTH_TOKEN — from your Claude Pro subscription (zero API cost).
+# Generate via: claude setup-token
+# Add at: Repo → Settings → Secrets and variables → Actions → New secret
+#
+# ─── USAGE ────────────────────────────────────────────────────────────────────
+#
+# First review:    "@claude review this PR"
+# Re-review:       "@claude re-review"
+# Targeted ask:    "@claude explain the issue on line 42 of app/features/cms/mod.ts"
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Claude PR Review
 
@@ -46,9 +64,8 @@ jobs:
     # Secrets are stored at environment level — this grants access to them.
     environment: production
 
-    # Only fire on PR comments (not issue comments) that mention @claude,
-    # posted by the repo owner. This prevents the workflow from running on
-    # every comment and from being triggered by untrusted users.
+    # Only fire on PR comments that mention @claude.
+    # Prevents running on plain issue comments and untrusted user triggers.
     if: |
       (
         github.event_name == 'issue_comment' &&
@@ -71,6 +88,336 @@ jobs:
         with:
           fetch-depth: 1
 
+      # ── Step 1: Resolve PR number and head branch ──────────────────────────
+      # issue_comment events don't expose the PR head branch directly.
+      # We look it up from the GitHub API so the phase detection step has it.
+      - name: Get PR info
+        id: pr-info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber =
+              context.issue?.number ??
+              context.payload.pull_request?.number;
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            core.setOutput('head_branch', pr.head.ref);
+            core.setOutput('pr_number', String(prNumber));
+
+      # ── Step 2: Map head branch → phase focus token ────────────────────────
+      - name: Detect phase
+        id: phase
+        run: |
+          BRANCH="${{ steps.pr-info.outputs.head_branch }}"
+          if [[ "$BRANCH" == *"phase-1"* ]]; then
+            echo "focus=phase1" >> "$GITHUB_OUTPUT"
+          elif [[ "$BRANCH" == *"phase-2"* ]]; then
+            echo "focus=phase2" >> "$GITHUB_OUTPUT"
+          elif [[ "$BRANCH" == *"phase-3"* ]] || [[ "$BRANCH" == "refactor/phase-3" ]]; then
+            echo "focus=phase3" >> "$GITHUB_OUTPUT"
+          elif [[ "$BRANCH" == *"phase-4"* ]]; then
+            echo "focus=phase4" >> "$GITHUB_OUTPUT"
+          else
+            echo "focus=generic" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Step 3: Build the phase-specific prompt ────────────────────────────
+      # Uses the multiline output EOF syntax to preserve newlines.
+      - name: Generate prompt
+        id: generate-prompt
+        env:
+          FOCUS: ${{ steps.phase.outputs.focus }}
+          PR_NUMBER: ${{ steps.pr-info.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # ── Phase-specific focus block ──────────────────────────────────────
+          case "$FOCUS" in
+            phase1)
+              PHASE_BLOCK="## Phase 1 Focus — Foundation & Service Layer
+
+          This PR introduces the Effect-ts service layer, Zod schemas, MSW test
+          infrastructure, the Cloudflare Workers SSR entry, and the home route loader.
+          Scrutinise these areas with the highest priority:
+
+          ### Effect-ts Patterns (critical)
+          - [ ] Every Effect computation uses \`Effect.gen\` — no raw \`.pipe(flatMap(...))\` chains
+                that reduce readability
+          - [ ] All error types are \`Data.TaggedError\` subclasses with a discriminant \`_tag\` field
+                — never \`new Error('string')\` inside an Effect
+          - [ ] Service is provided via \`Layer\` / \`Context.Tag\` — no \`new CmsService()\` at call sites
+          - [ ] Concurrent CMS fetches use \`Effect.all\` with explicit concurrency — not sequential awaits
+          - [ ] \`ManagedRuntime\` is initialised once at module load, not per-request
+          - [ ] Effect-ts is NEVER imported inside React components, Three.js files, or route components
+
+          ### Zod Schemas (critical)
+          - [ ] All TypeScript types are derived via \`z.infer<typeof SomeSchema>\` — zero hand-written
+                interface or type aliases that duplicate schema shape
+          - [ ] Schemas live in \`*.schema.ts\` files — not co-located with service or component code
+          - [ ] Schema parse errors produce \`CmsParseError\` (tagged) — not raw ZodError thrown
+
+          ### CMS Repository & MSW Tests (critical)
+          - [ ] Every HTTP endpoint the repository calls has a corresponding MSW handler in
+                \`app/test/msw/handlers.ts\`
+          - [ ] Tests assert on the resolved Effect value / error discriminant — not on implementation
+                internals (no spying on private methods)
+          - [ ] MSW handlers use the exact Payload REST API URL patterns from PRD-001 §4.6
+
+          ### Cloudflare Workers Compatibility (critical)
+          - [ ] No \`fs\`, \`path\`, \`Buffer\`, \`process.env\` (except via Cloudflare bindings), or any
+                Node.js-only API in any file reachable from \`workers/app.ts\`
+          - [ ] \`/// <reference types=\"@cloudflare/workers-types\" />\` is present in \`workers/app.ts\`
+          - [ ] Hono middleware is used only for security headers and CORS — no business logic in middleware
+
+          ### SSR Route Loader (high)
+          - [ ] Loader returns typed fallback data (not a thrown error) when CMS is unreachable
+          - [ ] Loader uses pattern matching on error discriminant — no \`catch (e: any)\`
+          - [ ] Loader does not import any Three.js or browser-only module (even transitively)"
+              ;;
+
+            phase2)
+              PHASE_BLOCK="## Phase 2 Focus — Payload CMS Schema & Access Control
+
+          This PR introduces the Payload CMS v3 application in \`cms/\`. The portfolio application
+          itself does not change behaviour — only the CMS data source is being set up.
+          Scrutinise these areas with the highest priority:
+
+          ### CMS Isolation (critical)
+          - [ ] No type, import, or module from \`cms/\` is referenced anywhere in \`app/\` or
+                \`workers/\` — the integration boundary is exclusively the REST API
+          - [ ] \`tsconfig.json\` at the root excludes \`cms/**/*\` from the portfolio type-check
+          - [ ] \`biome.json\` at the root excludes \`cms/\` from the portfolio lint pass
+          - [ ] \`pnpm build\` from the root builds only the React Router portfolio — not the CMS
+
+          ### Payload Schema Correctness (critical)
+          - [ ] Every field in the Payload \`Projects\` collection matches the \`Project\` type in
+                PRD-001 §4.5 exactly (title, description, thumbnail, tags, url, github, featured,
+                year, status, order)
+          - [ ] \`status\` field is a \`select\` with values \`draft | published\` — not a checkbox
+          - [ ] \`thumbnail\` and \`ogImage\` fields use Payload's \`upload\` type pointing to the
+                \`Media\` collection — not a plain text URL field
+          - [ ] \`SiteConfig\`, \`About\`, \`Contact\` are configured as Payload \`globals\` — not collections
+          - [ ] \`socials\` in the \`Contact\` global is an \`array\` field with \`platform\`, \`url\`, \`label\`
+
+          ### Access Control (critical)
+          - [ ] \`isAdmin\` function returns \`false\` for unauthenticated requests — not \`true\`
+          - [ ] Read access on all globals and the Projects collection is public (no auth required)
+                — the portfolio server fetches without credentials
+          - [ ] Write access (create, update, delete) on all collections and globals requires
+                \`isAdmin\` — no public write path exists
+
+          ### Zod↔Payload Shape Alignment (high)
+          - [ ] The Zod schemas in \`app/services/cms/cms.schemas.ts\` can successfully parse the
+                actual Payload REST API response shape (including array-of-objects format)
+          - [ ] The \`refactor(cms/schemas)\` commit handles the Payload array-of-objects format
+                via a Zod union transform — confirm the union covers both \`string[]\` and
+                \`{value: string}[]\` shapes"
+              ;;
+
+            phase3)
+              PHASE_BLOCK="## Phase 3 Focus — 3D Experience & Scroll Architecture
+
+          This PR introduces the full Three.js / React Three Fiber 3D experience.
+          This is the highest-complexity phase. Scrutinise these areas with the highest priority:
+
+          ### SSR Boundary (critical — site-breaking if violated)
+          - [ ] Zero Three.js, R3F, GSAP, or WebGL imports are reachable from any server-side
+                code path (\`workers/app.ts\`, route loaders, \`root.tsx\` server render)
+          - [ ] The R3F canvas component is imported exclusively via \`React.lazy()\` at its
+                usage site — never as a static top-level import
+          - [ ] A \`<Suspense>\` boundary wraps every \`React.lazy\` canvas component with a
+                meaningful fallback (not \`null\`)
+          - [ ] No \`window\`, \`document\`, \`navigator\`, or \`WebGLRenderingContext\` access at
+                module scope — only inside \`useEffect\` or event handlers
+
+          ### Three.js Resource Management (critical — memory leaks)
+          - [ ] Every \`BufferGeometry\`, \`Material\`, \`Texture\`, and \`WebGLRenderTarget\` created
+                inside a component calls \`.dispose()\` in the \`useEffect\` cleanup function
+          - [ ] R3F components that create Three.js objects use \`useMemo\` — objects are not
+                recreated on every render cycle
+          - [ ] Custom shader \`ShaderMaterial\` instances have \`.dispose()\` called on unmount
+
+          ### GLSL Shaders (high)
+          - [ ] All \`.glsl\`, \`.vert\`, \`.frag\` files are imported as typed string constants via
+                \`vite-plugin-glsl\` — no inline GLSL template literals (\`glsl\`...\`\`)
+          - [ ] Shader uniform names in TypeScript match the \`uniform\` declarations in the GLSL
+                source exactly (case-sensitive)
+          - [ ] \`app/types/glsl.d.ts\` is present and declares all three module patterns
+                (\`*.glsl\`, \`*.vert\`, \`*.frag\`)
+
+          ### Scroll Architecture (high)
+          - [ ] \`ScrollControls\` (R3F / drei) owns the scroll-to-3D animation relationship
+                inside the canvas — it does not control page-level scroll
+          - [ ] GSAP \`ScrollTrigger\` owns the magnetic section snap at the page level — it
+                does not interfere with \`ScrollControls\`' internal scroll element
+          - [ ] \`ScrollTrigger\` is attached to \`ScrollControls\`' internal scroll element,
+                not \`window\` (see fix commit: \`fix(scroll): connect GSAP ScrollTrigger\`)
+          - [ ] Camera interpolation uses \`gsap.to()\` on each animation frame with the
+                normalised scroll offset — no manual lerp that bypasses GSAP's easing
+
+          ### Mobile Fallback (high)
+          - [ ] The canvas is gated on: viewport ≥ 1024px AND WebGL2 support AND NOT
+                \`prefers-reduced-motion: reduce\`
+          - [ ] When the canvas is not rendered, all HTML content (name, bio, projects,
+                contact) is still visible in standard document flow
+          - [ ] The CSS fallback does not import any Three.js module (even type-only imports)"
+              ;;
+
+            phase4)
+              PHASE_BLOCK="## Phase 4 Focus — Polish, Accessibility & Audio
+
+          This PR introduces the liquid-glass navigation, EncryptedText component, Tone.js
+          audio rewrite, React Aria integration, glassmorphism overlays, a11y fixes, and
+          self-hosted font loading. Scrutinise these areas with the highest priority:
+
+          ### React Aria (critical)
+          - [ ] \`SectionNav\` uses \`RadioGroup\` and \`Radio\` from \`react-aria-components\`
+          - [ ] The \`RadioGroup\` has an \`aria-label\` describing its purpose
+          - [ ] Each \`Radio\` has a visible label or \`aria-label\` that matches the section name
+          - [ ] Keyboard navigation: Arrow keys cycle through sections, Enter/Space select —
+                this is the default React Aria RadioGroup behaviour; confirm no custom
+                key handler overrides it incorrectly
+
+          ### Tone.js Lifecycle (critical — audio state machine)
+          - [ ] \`import('tone')\` is a dynamic import called only on the first user gesture
+                (audio toggle click) — never at module load time
+          - [ ] The audio service follows exactly: \`idle → loading → playing → idle\` and
+                \`idle → loading → error\` — no other state transitions exist
+          - [ ] Every \`Tone.Player\`, \`Tone.Volume\`, \`Tone.CrossFade\`, and any other Tone.js
+                node has a corresponding \`.dispose()\` call in the service's \`dispose()\` method
+          - [ ] \`setSection()\` crossfades between section audio via \`Volume.rampTo()\` with a
+                duration — no abrupt \`.volume.value =\` assignments
+          - [ ] The Vitest mock uses \`function(this) { ... }\` constructor pattern for all
+                Tone.js classes (not arrow functions — esbuild breaks \`new\` with arrows)
+
+          ### Accessibility (critical)
+          - [ ] \`prefers-reduced-motion\` is detected reactively (via a \`MediaQueryList\`
+                \`change\` event listener) — not as a one-shot read on component mount.
+                A user who enables reduced-motion after page load must see the change applied.
+          - [ ] The sr-only bio content correctly serialises Lexical rich text nodes —
+                confirm \`RootNode → ParagraphNode → TextNode\` traversal handles all node types
+                present in the \`About\` global's rich text field
+          - [ ] No \`aria-label\` on non-interactive, non-landmark elements (decorative divs,
+                purely visual containers)
+          - [ ] Every new focusable element (nav items, audio toggle, project card links)
+                has a visible focus ring in the CSS
+
+          ### Self-Hosted Fonts (high)
+          - [ ] Outfit and Space Grotesk font files are served from the same origin (not
+                Google Fonts CDN) — no cross-origin font requests
+          - [ ] \`<link rel=\"preload\">\` tags are present in the HTML \`<head>\` for the
+                variable font files actually used in the critical rendering path
+          - [ ] Font \`@font-face\` declarations use \`font-display: swap\` to prevent invisible
+                text during font load
+          - [ ] No unused font weight axes are loaded — only the variable range actually
+                used in the CSS is declared
+
+          ### EncryptedText Component (high)
+          - [ ] The component renders the plain text in a \`<span>\` with \`aria-label\` set to
+                the decrypted value — screen readers announce the real text, not the cipher
+          - [ ] The scramble animation uses \`requestAnimationFrame\` — not \`setInterval\`
+          - [ ] The animation stops and resolves to the final plaintext when
+                \`prefers-reduced-motion: reduce\` is active"
+              ;;
+
+            *)
+              PHASE_BLOCK="## General Review
+
+          No specific phase was detected from the PR head branch. Applying the full
+          generic checklist. If this is a phase-specific PR, ensure the branch name
+          follows the pattern \`feat/phase-N\` or \`refactor/phase-N\`."
+              ;;
+          esac
+
+          # ── Write full prompt to GITHUB_OUTPUT using EOF delimiter ──────────
+          {
+            echo "prompt<<PROMPT_EOF"
+            cat <<INNER_EOF
+          REPO: $REPO
+          PR NUMBER: $PR_NUMBER
+
+          You are performing an exhaustive, line-by-line code review of this pull request.
+
+          ## Review Rules
+
+          - Be specific — reference exact file names and line numbers for every finding.
+          - Do not praise things that are merely correct. Focus on problems, risks, and improvements.
+          - Every finding must be actionable: state what is wrong, why it matters, and what the fix is.
+          - Distinguish clearly between CRITICAL (must fix before merge) and SUGGESTION (should fix, not blocking).
+          - On a re-review pass (when the comment contains "re-review"), explicitly check whether each
+            previous REQUEST_CHANGES finding has been resolved. State which are resolved and which remain.
+
+          $PHASE_BLOCK
+
+          ## Architecture & Pod Structure (all phases)
+          - [ ] Each feature lives in app/features/<pod>/ — no cross-cutting logic in a single file
+          - [ ] mod.ts barrel is the ONLY public export surface — external code never imports internal paths
+          - [ ] mod.ts exports only the minimum public surface — implementation details stay private
+          - [ ] File suffix convention enforced:
+                *.client.component.tsx  → CSR only (Three.js, browser APIs)
+                *.iso.component.tsx     → SSR + hydration safe
+                *.service.ts            → Effect-ts service layers / factories
+                *.repository.ts         → Raw data access
+                *.schema.ts             → Zod schema definitions
+                *.generator.ts          → Pure TS geometry/data generators
+                *.util.ts               → Shared constants and utilities
+                *.unit.test.ts          → Vitest unit tests (node env)
+                *.component.test.tsx    → Vitest component tests (jsdom env)
+
+          ## TypeScript Strictness (all phases)
+          - [ ] No implicit \`any\` — every variable and function parameter is typed
+          - [ ] No \`// @ts-ignore\` or \`// @ts-expect-error\` without an explanation comment
+          - [ ] Types are derived from Zod schemas via \`z.infer<>\` — never written by hand
+          - [ ] No unsafe type assertions (\`as SomeType\`) without documented justification
+          - [ ] \`strict: true\` compliance — no implicit returns, no unused parameters
+
+          ## Testing (all phases)
+          - [ ] Every new exported function or component has at least one test
+          - [ ] Unit tests are in \`*.unit.test.ts\` files (node environment by default)
+          - [ ] Component tests are in \`*.component.test.tsx\` with \`// @vitest-environment jsdom\`
+          - [ ] Tests query elements by accessible role/label — NEVER by CSS class or component name
+          - [ ] Vitest constructor mocks use \`function(this) { this.x = ... }\` pattern
+            (Vite/esbuild transpiles \`function() { return obj }\` → \`() => obj\`, breaking \`new\`)
+          - [ ] New MSW handlers match the correct HTTP method and URL pattern
+
+          ## Code Quality (all phases)
+          - [ ] No \`console.log\`, \`console.warn\`, or \`console.error\` left in production code
+          - [ ] No commented-out code blocks
+          - [ ] No hardcoded secrets, API URLs, or environment-specific values outside env vars
+          - [ ] Functions have a single clear responsibility (SRP)
+          - [ ] Magic numbers have named constants
+
+          ## Commit Hygiene
+          - [ ] Commit messages follow: \`type(scope): description\`
+                Types: feat | fix | refactor | chore | test | docs | style | build | perf
+          - [ ] No \`[ci-stub]\` commits present — these must be removed before merge
+
+          ---
+
+          ## Required Outcome (MANDATORY — do not skip)
+
+          After posting all inline findings, you MUST submit a formal GitHub PR review
+          using one of the following commands:
+
+          If ANY critical issue is found (must fix before merge):
+            gh pr review $PR_NUMBER --request-changes --body "Critical issues found — see inline comments. Re-trigger with @claude re-review after fixes."
+
+          If ONLY suggestions (non-blocking) or no issues at all:
+            gh pr review $PR_NUMBER --approve --body "All critical issues resolved. Ready to merge."
+
+          Then post a top-level PR comment summarising:
+            - Critical issues (must fix before merge) — numbered list
+            - Suggestions (should fix, not blocking) — numbered list
+            - Confirmation of review outcome (APPROVED or CHANGES REQUESTED)
+          INNER_EOF
+            echo "PROMPT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # ── Step 4: Run Claude review with phase-specific prompt ───────────────
       - name: Claude code review
         uses: anthropics/claude-code-action@v1
         with:
@@ -78,99 +425,14 @@ jobs:
           # Generated via: claude setup-token
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-          # Project-specific review checklist.
-          # Claude reads the full diff AND the complete content of every
-          # changed file before reviewing.
-          prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          prompt: ${{ steps.generate-prompt.outputs.prompt }}
 
-            Perform an exhaustive, line-by-line code review of this pull request.
-            Be specific — reference exact file names and line numbers for every finding.
-            Do not give praise for things that are merely correct. Focus on problems,
-            risks, and improvements. Every finding must be actionable.
-
-            Review against these project standards:
-
-            ## Architecture & Pod Structure
-            - [ ] Each feature lives in app/features/<pod>/ — no cross-cutting logic in a single file
-            - [ ] mod.ts barrel is the ONLY public export surface — external code never imports internal paths
-            - [ ] mod.ts exports only the minimum needed — implementation details stay private
-            - [ ] File suffix convention enforced:
-                  *.client.component.tsx  → CSR only (Three.js, browser APIs)
-                  *.iso.component.tsx     → SSR + hydration safe
-                  *.service.ts            → Effect-ts service layers / factories
-                  *.repository.ts         → Raw data access
-                  *.schema.ts             → Zod schema definitions
-                  *.generator.ts          → Pure TS geometry/data generators
-                  *.util.ts               → Shared constants and utilities
-                  *.unit.test.ts          → Vitest unit tests (node env)
-                  *.component.test.tsx    → Vitest component tests (jsdom env)
-
-            ## TypeScript Strictness
-            - [ ] No implicit `any` — every variable and function parameter is typed
-            - [ ] No `// @ts-ignore` or `// @ts-expect-error` without an explanation comment
-            - [ ] Types are derived from Zod schemas via `z.infer<>` — never written by hand
-            - [ ] No unsafe type assertions (`as SomeType`) without documented justification
-            - [ ] `strict: true` compliance — no implicit returns, no unused parameters
-
-            ## Effect-ts (CMS service layer only)
-            - [ ] Errors are `Data.TaggedError` subclasses — never plain `new Error()`
-            - [ ] Effects are composed with `Effect.gen` / `.pipe` — no bare `try/catch` inside Effects
-            - [ ] `Layer` / `Context.Tag` DI pattern is followed — no `new Service()` in callers
-            - [ ] Effect-ts is NEVER used in React components or Three.js code
-
-            ## React & SSR Safety
-            - [ ] `*.client.component.tsx` files are never statically imported from SSR paths
-            - [ ] `useEffect` dependency arrays are exhaustive — no missing deps
-            - [ ] No `window`, `document`, or `navigator` access at module scope or during SSR
-            - [ ] `React.lazy` + `Suspense` used for all Three.js canvas components
-
-            ## Three.js / React Three Fiber
-            - [ ] Geometries and materials are memoized (`useMemo`) — not recreated on every render
-            - [ ] All Three.js objects call `.dispose()` in the `useEffect` cleanup or `onUnmount`
-            - [ ] No direct DOM manipulation inside R3F components
-            - [ ] GLSL shaders are imported as typed strings via vite-plugin-glsl, not inline template literals
-
-            ## Tone.js (audio pod)
-            - [ ] `import('tone')` is dynamic and only called on first user gesture (autoplay policy)
-            - [ ] Every Tone.js node has a corresponding `.dispose()` call in `dispose()`
-            - [ ] State machine transitions follow idle → playing → idle / idle → error exactly
-            - [ ] `setSection()` crossfades via `Volume.rampTo()` — no abrupt cuts
-
-            ## Testing
-            - [ ] Every new exported function or component has at least one test
-            - [ ] Unit tests are in `*.unit.test.ts` files with `// @vitest-environment node` (default)
-            - [ ] Component tests are in `*.component.test.tsx` with `// @vitest-environment jsdom`
-            - [ ] Tests query elements by accessible role/label — NEVER by CSS class or component name
-            - [ ] Vitest constructor mocks use `function(this) { this.x = ... }` pattern
-              (Vite/esbuild transpiles `function() { return obj }` → `() => obj`, breaking `new`)
-            - [ ] New MSW handlers match the correct HTTP method and URL pattern
-
-            ## Accessibility
-            - [ ] Interactive widgets with complex keyboard patterns use React Aria Components
-              (currently used: RadioGroup + Radio in SectionNav)
-            - [ ] `aria-label` is only on interactive or landmark elements — not decorative divs
-            - [ ] All images have meaningful `alt` text, or `alt=""` + `aria-hidden="true"` if decorative
-            - [ ] New focusable elements have visible focus rings
-            - [ ] Screen-reader-only content uses the `sr-only` Tailwind class, not `display:none`
-
-            ## Code Quality
-            - [ ] No `console.log`, `console.warn`, or `console.error` left in production code
-            - [ ] No commented-out code blocks
-            - [ ] No hardcoded secrets, API URLs, or environment-specific values outside env vars
-            - [ ] Functions have a single clear responsibility (SRP)
-            - [ ] Magic numbers have named constants
-
-            ## Commit Hygiene (if commits are visible)
-            - [ ] Commit messages follow the convention: `type(scope): description`
-                  Types: feat | fix | refactor | chore | test | docs | style | build
-
-            Post inline comments on specific lines for each issue found.
-            Post a single top-level PR comment with a concise summary of:
-              - Critical issues (must fix before merge)
-              - Suggestions (should fix, not blocking)
-              - Positives (optional — only if something is notably well done)
-
+          # Tools available to Claude:
+          #   mcp__github_inline_comment__create_inline_comment — post inline PR comments
+          #   gh pr comment     — post top-level PR comments
+          #   gh pr diff        — read the full PR diff
+          #   gh pr view        — read PR metadata
+          #   gh pr review      — submit APPROVE or REQUEST_CHANGES (hard gate)
+          #   Read              — read changed file contents
           claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Read"
