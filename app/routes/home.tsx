@@ -251,6 +251,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	// misaligned with the snap anchors at 0.33/0.66.
 	const isSection2 = scrollOffset >= 0.33 && scrollOffset < 0.66;
 	const isSection3 = scrollOffset >= 0.66;
+	const isSection1 = !isSection2 && !isSection3;
 	// Numeric section index for SectionNav (0 = hero, 1 = about, 2 = work)
 	const section = isSection3 ? 2 : isSection2 ? 1 : 0;
 
@@ -260,19 +261,49 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	return (
 		<>
 			{/* ----------------------------------------------------------------
-			    Visually-hidden but screen-reader-accessible content.
-			    Always present regardless of 3D canvas support.
-			    ---------------------------------------------------------------- */}
+                Visually-hidden but screen-reader-accessible content.
+                Always present regardless of 3D canvas support. Provides the
+                full portfolio content to assistive technology independently of
+                the 3D canvas experience.
+                ---------------------------------------------------------------- */}
 			<div className="sr-only" aria-hidden="false">
 				<h1>{siteConfig.name}</h1>
 				<p>{siteConfig.tagline}</p>
+				{siteConfig.subtitle && <p>{siteConfig.subtitle}</p>}
+
+				<h2>{siteConfig.sectionTitles.about}</h2>
 				<p>{about.bio ? extractText(about.bio) : ""}</p>
-				<ul>
+				{about.skills.length > 0 && (
+					<ul aria-label="Skills and technologies">
+						{about.skills.map((skill) => (
+							<li key={skill}>{skill}</li>
+						))}
+					</ul>
+				)}
+
+				<h2>{siteConfig.sectionTitles.work}</h2>
+				<ul aria-label="Projects">
 					{projects.map((p) => (
-						<li key={p.id}>{p.title}</li>
+						<li key={p.id}>
+							<strong>{p.title}</strong>
+							{p.description ? ` — ${p.description}` : ""}
+							{p.year ? ` (${p.year})` : ""}
+						</li>
 					))}
 				</ul>
-				<p>{contact.email}</p>
+
+				<h2>{siteConfig.sectionTitles.contact}</h2>
+				<p>{contact.ctaText}</p>
+				<a href={`mailto:${contact.email}`}>{contact.email}</a>
+				{contact.socials.length > 0 && (
+					<ul aria-label="Social links">
+						{contact.socials.map((s) => (
+							<li key={s.platform}>
+								<a href={s.url}>{s.label}</a>
+							</li>
+						))}
+					</ul>
+				)}
 			</div>
 
 			{/* ----------------------------------------------------------------
