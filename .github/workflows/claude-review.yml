@@ -22,8 +22,8 @@
 #
 #   feat/phase-1*     → Effect-ts, Zod schemas, MSW tests, CMS service layer
 #   feat/phase-2*     → Payload CMS schema, access control, cms/ isolation
-#   refactor/phase-3
-#   feat/phase-3*     → Three.js SSR boundary, dispose(), useMemo, GLSL imports
+#   feat/phase-3* /
+#   refactor/phase-3  → Three.js SSR boundary, dispose(), useMemo, GLSL imports
 #   feat/phase-4*     → React Aria, Tone.js lifecycle, a11y, fonts, glassmorphism
 #
 # ─── BRANCH PROTECTION REQUIREMENT ───────────────────────────────────────────
@@ -61,6 +61,15 @@ jobs:
   review:
     name: Claude code review
     runs-on: ubuntu-latest
+
+    # pull-requests: write is required so Claude can submit APPROVE / REQUEST_CHANGES
+    # via `gh pr review`. Without this, the hard gate is non-functional.
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+      actions: read
+
     # Secrets are stored at environment level — this grants access to them.
     environment: production
 
@@ -76,29 +85,33 @@ jobs:
         contains(github.event.comment.body, '@claude')
       )
 
-    permissions:
-      contents: read
-      pull-requests: write
-      id-token: write
-      actions: read
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+        # Pinned to v4 tag SHA — guards against supply-chain compromise on a
+        # mutable tag that has pull-request write access.
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       # ── Step 1: Resolve PR number and head branch ──────────────────────────
       # issue_comment events don't expose the PR head branch directly.
       # We look it up from the GitHub API so the phase detection step has it.
       - name: Get PR info
         id: pr-info
-        uses: actions/github-script@v7
+        # Pinned to v7 tag SHA.
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
         with:
           script: |
             const prNumber =
               context.issue?.number ??
               context.payload.pull_request?.number;
+
+            // Guard: both sources can be undefined on malformed events.
+            if (!prNumber) {
+              core.setFailed(
+                'Could not resolve PR number from event context. ' +
+                'Ensure this workflow only runs on pull_request or issue_comment events.'
+              );
+              return;
+            }
 
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
@@ -110,17 +123,22 @@ jobs:
             core.setOutput('pr_number', String(prNumber));
 
       # ── Step 2: Map head branch → phase focus token ────────────────────────
+      # SECURITY: branch name is passed via env var, NOT interpolated directly
+      # into the run script. Direct interpolation allows shell injection if a
+      # branch name contains metacharacters (e.g. `$(command)` or `` `cmd` ``).
       - name: Detect phase
         id: phase
+        env:
+          HEAD_BRANCH: ${{ steps.pr-info.outputs.head_branch }}
         run: |
-          BRANCH="${{ steps.pr-info.outputs.head_branch }}"
-          if [[ "$BRANCH" == *"phase-1"* ]]; then
+          if [[ "$HEAD_BRANCH" == *"phase-1"* ]]; then
             echo "focus=phase1" >> "$GITHUB_OUTPUT"
-          elif [[ "$BRANCH" == *"phase-2"* ]]; then
+          elif [[ "$HEAD_BRANCH" == *"phase-2"* ]]; then
             echo "focus=phase2" >> "$GITHUB_OUTPUT"
-          elif [[ "$BRANCH" == *"phase-3"* ]] || [[ "$BRANCH" == "refactor/phase-3" ]]; then
+          elif [[ "$HEAD_BRANCH" == *"phase-3"* ]]; then
+            # Matches feat/phase-3*, refactor/phase-3, and any other phase-3 variant.
             echo "focus=phase3" >> "$GITHUB_OUTPUT"
-          elif [[ "$BRANCH" == *"phase-4"* ]]; then
+          elif [[ "$HEAD_BRANCH" == *"phase-4"* ]]; then
             echo "focus=phase4" >> "$GITHUB_OUTPUT"
           else
             echo "focus=generic" >> "$GITHUB_OUTPUT"
@@ -419,7 +437,13 @@ jobs:
 
       # ── Step 4: Run Claude review with phase-specific prompt ───────────────
       - name: Claude code review
-        uses: anthropics/claude-code-action@v1
+        # Pinned to v1 tag SHA — this action has pull-request write access and
+        # runs with CLAUDE_CODE_OAUTH_TOKEN; SHA pinning prevents tag mutation attacks.
+        uses: anthropics/claude-code-action@18c2b94d83ba2647c1a5e025edb06441c4a7b46e  # v1
+        env:
+          # Explicit token ensures `gh pr review` inside Claude's shell has
+          # pull-requests:write credentials regardless of runner default settings.
+          GH_TOKEN: ${{ github.token }}
         with:
           # OAuth token from your Claude Pro subscription (zero API cost).
           # Generated via: claude setup-token

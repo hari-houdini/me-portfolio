@@ -1,14 +1,11 @@
 {
 	"$schema": "https://json.schemastore.org/claude-code-settings.json",
 	"cleanupPeriodDays": 40,
-	"attribution": {
-		"commit": "",
-		"pr": ""
-	},
 	"includeGitInstructions": true,
 	"permissions": {
-		"allow": ["Bash(pnpm run lint)", "Bash(pnpm run test *)", "Read(~/.zshrc)"],
+		"allow": ["Bash(pnpm run lint)", "Bash(pnpm run test *)"],
 		"deny": [
+			"Bash(git push *)",
 			"Bash(curl *)",
 			"Read(./.env)",
 			"Read(./.env.*)",
@@ -25,7 +22,7 @@
 					{
 						"type": "command",
 						"command": "pnpm check",
-						"timeout": 5
+						"timeout": 60
 					}
 				]
 			}
@@ -33,8 +30,7 @@
 	},
 	"env": {
 		"CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-		"OTEL_METRICS_EXPORTER": "otlp",
-		"CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS": "false"
+		"OTEL_METRICS_EXPORTER": "otlp"
 	},
 	"companyAnnouncements": [
 		"Welcome to Houdini Labs! To know more, visit https://harihoudini.dev",
