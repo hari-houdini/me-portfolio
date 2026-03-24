@@ -199,13 +199,7 @@ function useIs3DCapable() {
 	const [capable, setCapable] = useState(false);
 
 	useEffect(() => {
-		// Run only on client after hydration
-		const isWide = window.innerWidth >= 1024;
-		const prefersReduced = window.matchMedia(
-			"(prefers-reduced-motion: reduce)",
-		).matches;
-
-		// Check WebGL2 support
+		// WebGL2 support is static — check once and cache the result.
 		let hasWebGL = false;
 		try {
 			const canvas = document.createElement("canvas");
@@ -214,7 +208,21 @@ function useIs3DCapable() {
 			hasWebGL = false;
 		}
 
-		setCapable(isWide && !prefersReduced && hasWebGL);
+		const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+		function evaluate() {
+			const isWide = window.innerWidth >= 1024;
+			setCapable(isWide && !motionQuery.matches && hasWebGL);
+		}
+
+		// Initial evaluation on mount.
+		evaluate();
+
+		// Re-evaluate whenever the OS accessibility setting changes mid-session
+		// (e.g. user toggles "Reduce Motion" in System Settings while browsing).
+		// This immediately unmounts the canvas and shows the static fallback.
+		motionQuery.addEventListener("change", evaluate);
+		return () => motionQuery.removeEventListener("change", evaluate);
 	}, []);
 
 	return capable;
