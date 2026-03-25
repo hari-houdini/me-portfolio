@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/hari-houdini/me-portfolio/compare/v1.0.0...v1.1.0) (2026-03-25)
+
+
+### Bug Fixes
+
+* **security:** harden claude-review workflow and settings ([7752a65](https://github.com/hari-houdini/me-portfolio/commit/7752a65d0ad5d3bda3576b1f84939accb84a59f1)), closes [#2](https://github.com/hari-houdini/me-portfolio/issues/2) [#3](https://github.com/hari-houdini/me-portfolio/issues/3) [#6](https://github.com/hari-houdini/me-portfolio/issues/6) [#7](https://github.com/hari-houdini/me-portfolio/issues/7) [#5](https://github.com/hari-houdini/me-portfolio/issues/5) [#1](https://github.com/hari-houdini/me-portfolio/issues/1) [#4](https://github.com/hari-houdini/me-portfolio/issues/4) [#8](https://github.com/hari-houdini/me-portfolio/issues/8) [#9](https://github.com/hari-houdini/me-portfolio/issues/9)
+
+
+### Features
+
+* **claude-review:** v2 — filtered diff, findings cache, severity tiers, hard gate ([94223c0](https://github.com/hari-houdini/me-portfolio/commit/94223c0d2b3b7f878798e0ff99809888b45cb27e))
+
 # 1.0.0 (2026-03-23)
 
 
