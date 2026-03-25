@@ -1,35 +1,73 @@
-# claude-review.yml — AI-powered PR code review
+# claude-review.yml — AI-powered PR code review with formal hard-gate approval
 #
-# Triggers when you mention @claude in any PR comment or review comment.
-# Claude reads the full diff + all changed files and posts:
-#   - Inline code comments on specific lines
-#   - A top-level PR review comment summarising findings
+# ─── HOW THE HARD GATE WORKS ──────────────────────────────────────────────────
 #
-# Authentication: CLAUDE_CODE_OAUTH_TOKEN (Claude Pro subscription).
-# Zero additional cost — uses your existing claude.ai Pro plan.
+# 1. You comment "@claude review this PR" on a PR
+# 2. A filtered diff is generated — excluded files are stripped before Claude
+#    ever sees them (see EXCLUDED FILES below)
+# 3. Claude reads the filtered diff, previous findings (if cached), and posts:
+#    - Inline comments on specific lines
+#    - One structured summary comment (Critical → Major → Minor → verdict)
+#    - A collapsible reasoning block per Critical/Major finding
+# 4. Claude submits a formal GitHub review:
+#    - REQUEST_CHANGES → merge button disabled
+#    - APPROVE         → merge button active (only when 0 critical + 0 major)
+# 5. You fix issues, push new commits (stale review dismissed automatically)
+# 6. Comment "@claude re-review" — Claude diffs against cached prior findings
+# 7. CI green + Claude APPROVED → you can merge
 #
-# ─── ONE-TIME SETUP REQUIRED ───────────────────────────────────────────────
+# ─── EXCLUDED FILES (never shown to Claude) ────────────────────────────────────
 #
-# 1. Install the Claude GitHub App on this repository:
-#    https://github.com/apps/claude
+# Claude does not review its own config or process documentation:
+#   .claude/**                          — Claude Code project settings
+#   .github/workflows/claude-review.yml — this file (conflict of interest)
+#   agents/docs/**                      — PRD, merge plan, process docs
+#   *.md                                — README, CHANGELOG, all Markdown
 #
-# 2. Generate your OAuth token (uses your Claude Pro subscription):
-#    In your terminal:  claude setup-token
-#    Copy the printed token.
+# All other .github/workflows/ files ARE reviewed — CI bugs are real bugs.
 #
-# 3. Add it as a repository secret:
-#    Repo → Settings → Secrets and variables → Actions → New secret
-#    Name:  CLAUDE_CODE_OAUTH_TOKEN
-#    Value: <paste the token from step 2>
+# ─── PHASE-AWARE REVIEW ───────────────────────────────────────────────────────
 #
-# ─── USAGE ─────────────────────────────────────────────────────────────────
+# Branch name → phase-specific review focus injected into the prompt:
+#   feat/phase-1*  → Effect-ts, Zod schemas, MSW tests, CMS service layer
+#   feat/phase-2*  → Payload CMS schema, access control, cms/ isolation
+#   feat/phase-3* /
+#   refactor/phase-3  → Three.js SSR boundary, dispose(), useMemo, GLSL
+#   feat/phase-4*  → React Aria, Tone.js lifecycle, a11y, self-hosted fonts
 #
-# On any pull request, post a comment containing "@claude":
-#   @claude review this PR
-#   @claude check this against our conventions
+# ─── SEVERITY TIERS ──────────────────────────────────────────────────────────
 #
-# Claude will immediately start reviewing and post results to the PR.
-# ───────────────────────────────────────────────────────────────────────────
+#   🔴 CRITICAL — blocks approval (security, runtime errors, data loss, SSR violations)
+#   🟠 MAJOR    — blocks approval (pod violations, missing tests, architectural deviations)
+#   🟡 MINOR    — advisory only, never blocks approval
+#
+# ─── FINDINGS CACHE ──────────────────────────────────────────────────────────
+#
+# After each run Claude writes /tmp/claude-findings.json. This is stored in
+# GitHub Actions cache keyed by PR number + commit SHA. Re-reviews restore
+# the prior findings and Claude explicitly marks each as RESOLVED / STILL OPEN
+# or flags NEW findings. Zero cost — a few KB JSON per PR, 7-day expiry.
+#
+# ─── BRANCH PROTECTION REQUIREMENT ───────────────────────────────────────────
+#
+# Repo → Settings → Branches → Edit rule for "main":
+#   → Require pull request + Required approvals: 1
+#   → Dismiss stale reviews when new commits are pushed: ✅
+#   → Require status checks to pass (Quality gate): ✅
+#   → Require branches to be up to date before merging: ✅
+#
+# ─── AUTHENTICATION ───────────────────────────────────────────────────────────
+#
+# CLAUDE_CODE_OAUTH_TOKEN — repo-level secret, Claude Pro subscription.
+# Generate via: claude setup-token
+# Add at: Repo → Settings → Secrets → Actions → New secret
+#
+# ─── USAGE ────────────────────────────────────────────────────────────────────
+#
+# First review:  "@claude review this PR"
+# Re-review:     "@claude re-review"
+# Targeted ask:  "@claude explain the issue on line 42 of app/features/cms/mod.ts"
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Claude PR Review
 
@@ -43,12 +81,17 @@ jobs:
   review:
     name: Claude code review
     runs-on: ubuntu-latest
-    # Secrets are stored at environment level — this grants access to them.
-    environment: production
 
-    # Only fire on PR comments (not issue comments) that mention @claude,
-    # posted by the repo owner. This prevents the workflow from running on
-    # every comment and from being triggered by untrusted users.
+    # pull-requests: write is required for gh pr review (APPROVE / REQUEST_CHANGES).
+    # No environment: gate here — CLAUDE_CODE_OAUTH_TOKEN is a repo-level secret.
+    # release.yml retains environment: production for its RELEASE_TOKEN.
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+      actions: read
+
+    # Only fire on PR comments that mention @claude.
     if: |
       (
         github.event_name == 'issue_comment' &&
@@ -59,118 +102,577 @@ jobs:
         contains(github.event.comment.body, '@claude')
       )
 
-    permissions:
-      contents: read
-      pull-requests: write
-      id-token: write
-      actions: read
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
+      # ── Step 1: Resolve PR number and head branch ──────────────────────────
+      - name: Get PR info
+        id: pr-info
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
+        with:
+          script: |
+            const prNumber =
+              context.issue?.number ??
+              context.payload.pull_request?.number;
+
+            if (!prNumber) {
+              core.setFailed(
+                'Could not resolve PR number from event context. ' +
+                'Ensure this workflow only runs on pull_request or issue_comment events.'
+              );
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            core.setOutput('head_branch', pr.head.ref);
+            core.setOutput('pr_number', String(prNumber));
+
+      # ── Step 2: Map head branch → phase focus token ────────────────────────
+      # SECURITY: branch name passed via env var, never interpolated into script.
+      - name: Detect phase
+        id: phase
+        env:
+          HEAD_BRANCH: ${{ steps.pr-info.outputs.head_branch }}
+        run: |
+          if [[ "$HEAD_BRANCH" == *"phase-1"* ]]; then
+            echo "focus=phase1" >> "$GITHUB_OUTPUT"
+          elif [[ "$HEAD_BRANCH" == *"phase-2"* ]]; then
+            echo "focus=phase2" >> "$GITHUB_OUTPUT"
+          elif [[ "$HEAD_BRANCH" == *"phase-3"* ]]; then
+            echo "focus=phase3" >> "$GITHUB_OUTPUT"
+          elif [[ "$HEAD_BRANCH" == *"phase-4"* ]]; then
+            echo "focus=phase4" >> "$GITHUB_OUTPUT"
+          else
+            echo "focus=generic" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Step 3: Generate filtered diff ────────────────────────────────────
+      # Strip self-referential files before Claude sees the diff.
+      # Technical enforcement: gh pr diff is NOT in Claude's allowed tools,
+      # so it cannot fetch the unfiltered diff via any other path.
+      #
+      # Excluded patterns:
+      #   .claude/**                          — Claude Code project settings
+      #   .github/workflows/claude-review.yml — this workflow (conflict of interest)
+      #   agents/docs/**                      — PRD, merge plan, process docs
+      #   *.md                                — README, CHANGELOG, all Markdown
+      - name: Generate filtered diff
+        id: filtered-diff
+        env:
+          PR_NUMBER: ${{ steps.pr-info.outputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 << 'PYEOF'
+          import subprocess, sys, re, os
+
+          EXCLUDE = [
+              r'^\.claude/',
+              r'^\.github/workflows/claude-review\.yml$',
+              r'^agents/docs/',
+              r'\.md$',
+          ]
+
+          def excluded(path):
+              return any(re.search(p, path) for p in EXCLUDE)
+
+          result = subprocess.run(
+              ['gh', 'pr', 'diff', os.environ['PR_NUMBER']],
+              capture_output=True, text=True, check=True
+          )
+
+          filtered = []
+          in_excluded = False
+          for line in result.stdout.splitlines(keepends=True):
+              m = re.match(r'^diff --git a/(.+) b/', line)
+              if m:
+                  in_excluded = excluded(m.group(1))
+              if not in_excluded:
+                  filtered.append(line)
+
+          with open('/tmp/filtered-diff.patch', 'w') as f:
+              f.writelines(filtered)
+
+          total   = len(result.stdout.splitlines())
+          kept    = len(filtered)
+          dropped = total - kept
+          print(f'Diff filter: {kept}/{total} lines kept, {dropped} lines excluded.')
+          PYEOF
+
+      # ── Step 4: Restore previous review findings from cache ───────────────
+      # Exact key: review-pr-{PR}-{SHA} — written after each run.
+      # Fallback:  review-pr-{PR}-      — finds most recent run for this PR.
+      # Effect: re-reviews after a new push load findings from the prior push.
+      - name: Restore previous findings
+        id: findings-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+        with:
+          path: /tmp/claude-findings.json
+          key: review-pr-${{ steps.pr-info.outputs.pr_number }}-${{ github.sha }}
+          restore-keys: |
+            review-pr-${{ steps.pr-info.outputs.pr_number }}-
+
+      # ── Step 5: Load previous findings into step output ───────────────────
+      - name: Load previous findings
+        id: prev-findings
+        run: |
+          if [ -f /tmp/claude-findings.json ]; then
+            echo "has_previous=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "data<<FINDINGS_EOF"
+              cat /tmp/claude-findings.json
+              echo "FINDINGS_EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "has_previous=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Step 6: Build the full phase-specific prompt ───────────────────────
+      - name: Generate prompt
+        id: generate-prompt
+        env:
+          FOCUS: ${{ steps.phase.outputs.focus }}
+          PR_NUMBER: ${{ steps.pr-info.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+          HAS_PREVIOUS: ${{ steps.prev-findings.outputs.has_previous }}
+          PREVIOUS_FINDINGS: ${{ steps.prev-findings.outputs.data }}
+          TRIGGER_BODY: ${{ github.event.comment.body }}
+        run: |
+          # ── Phase-specific focus block ──────────────────────────────────────
+          case "$FOCUS" in
+            phase1)
+              PHASE_BLOCK="## Phase 1 Focus — Foundation & Service Layer
+
+          This PR introduces the Effect-ts service layer, Zod schemas, MSW test
+          infrastructure, the Cloudflare Workers SSR entry, and the home route loader.
+
+          ### Effect-ts Patterns
+          - [ ] Every Effect computation uses \`Effect.gen\` — no raw \`.pipe(flatMap(...))\` chains
+          - [ ] All error types are \`Data.TaggedError\` subclasses with a \`_tag\` discriminant
+                — never \`new Error('string')\` inside an Effect
+          - [ ] Service provided via \`Layer\` / \`Context.Tag\` — no \`new CmsService()\` at call sites
+          - [ ] Concurrent CMS fetches use \`Effect.all\` — not sequential awaits
+          - [ ] \`ManagedRuntime\` initialised once at module load, not per-request
+          - [ ] Effect-ts is NEVER imported inside React components or Three.js files
+
+          ### Zod Schemas
+          - [ ] All TypeScript types derived via \`z.infer<typeof SomeSchema>\` — zero hand-written types
+          - [ ] Schemas live in \`*.schema.ts\` files — not co-located with service or component code
+          - [ ] Schema parse errors produce \`CmsParseError\` (tagged) — not raw ZodError thrown
+
+          ### CMS Repository & MSW Tests
+          - [ ] Every HTTP endpoint has a corresponding MSW handler in \`app/test/msw/handlers.ts\`
+          - [ ] Tests assert on Effect value / error discriminant — not on implementation internals
+          - [ ] MSW handlers use exact Payload REST API URL patterns from PRD-001 §4.6
+
+          ### Cloudflare Workers Compatibility
+          - [ ] No \`fs\`, \`path\`, \`Buffer\`, or Node.js-only APIs in any file reachable from \`workers/app.ts\`
+          - [ ] \`/// <reference types=\"@cloudflare/workers-types\" />\` present in \`workers/app.ts\`
+          - [ ] Hono middleware used only for security headers and CORS — no business logic
+
+          ### SSR Route Loader
+          - [ ] Loader returns typed fallback data (not thrown error) when CMS is unreachable
+          - [ ] Loader uses pattern matching on error discriminant — no \`catch (e: any)\`
+          - [ ] Loader does not import any Three.js or browser-only module (even transitively)"
+              ;;
+
+            phase2)
+              PHASE_BLOCK="## Phase 2 Focus — Payload CMS Schema & Access Control
+
+          This PR introduces the Payload CMS v3 application in \`cms/\`.
+
+          ### CMS Isolation
+          - [ ] No type, import, or module from \`cms/\` referenced anywhere in \`app/\` or \`workers/\`
+          - [ ] \`tsconfig.json\` excludes \`cms/**/*\` from the portfolio type-check
+          - [ ] \`biome.json\` excludes \`cms/\` from the portfolio lint pass
+          - [ ] \`pnpm build\` from root builds only the React Router portfolio, not the CMS
+
+          ### Payload Schema Correctness
+          - [ ] Every field in the Payload \`Projects\` collection matches PRD-001 §4.5 exactly
+          - [ ] \`status\` field is a \`select\` with values \`draft | published\` — not a checkbox
+          - [ ] \`thumbnail\` and \`ogImage\` use Payload's \`upload\` type pointing to \`Media\` collection
+          - [ ] \`SiteConfig\`, \`About\`, \`Contact\` configured as Payload \`globals\` — not collections
+          - [ ] \`socials\` in \`Contact\` is an \`array\` field with \`platform\`, \`url\`, \`label\`
+
+          ### Access Control
+          - [ ] \`isAdmin\` returns \`false\` for unauthenticated requests — not \`true\`
+          - [ ] Read access on all globals and Projects is public (no auth required)
+          - [ ] Write access requires \`isAdmin\` — no public write path exists
+
+          ### Zod↔Payload Shape Alignment
+          - [ ] Zod schemas in \`app/services/cms/cms.schemas.ts\` parse actual Payload REST responses
+          - [ ] Union transform covers both \`string[]\` and \`{value: string}[]\` array-of-objects shapes"
+              ;;
+
+            phase3)
+              PHASE_BLOCK="## Phase 3 Focus — 3D Experience & Scroll Architecture
+
+          This is the highest-complexity phase. The SSR boundary and resource management
+          checks below are the most critical in the entire codebase.
+
+          ### SSR Boundary
+          - [ ] Zero Three.js, R3F, GSAP, or WebGL imports reachable from any server-side path
+          - [ ] R3F canvas imported exclusively via \`React.lazy()\` — never as a static top-level import
+          - [ ] \`<Suspense>\` boundary wraps every \`React.lazy\` canvas component with meaningful fallback
+          - [ ] No \`window\`, \`document\`, \`navigator\`, or \`WebGLRenderingContext\` at module scope
+
+          ### Three.js Resource Management
+          - [ ] Every \`BufferGeometry\`, \`Material\`, \`Texture\`, \`WebGLRenderTarget\` calls \`.dispose()\` on unmount
+          - [ ] R3F components use \`useMemo\` for Three.js objects — not recreated on every render
+          - [ ] Custom \`ShaderMaterial\` instances have \`.dispose()\` called on unmount
+
+          ### GLSL Shaders
+          - [ ] All \`.glsl\`/\`.vert\`/\`.frag\` files imported via \`vite-plugin-glsl\` — no inline template literals
+          - [ ] Shader uniform names in TypeScript match \`uniform\` declarations in GLSL (case-sensitive)
+          - [ ] \`app/types/glsl.d.ts\` present and declares \`*.glsl\`, \`*.vert\`, \`*.frag\`
+
+          ### Scroll Architecture
+          - [ ] \`ScrollControls\` (R3F/drei) owns scroll-to-3D inside the canvas only
+          - [ ] GSAP \`ScrollTrigger\` owns page-level magnetic snap — does not interfere with ScrollControls
+          - [ ] \`ScrollTrigger\` attached to ScrollControls' internal scroll element, not \`window\`
+          - [ ] Camera interpolation uses \`gsap.to()\` — no manual lerp bypassing GSAP easing
+
+          ### Mobile Fallback
+          - [ ] Canvas gated on: viewport ≥ 1024px AND WebGL2 AND NOT prefers-reduced-motion
+          - [ ] When canvas not rendered, all HTML content still visible in standard document flow
+          - [ ] CSS fallback does not import any Three.js module"
+              ;;
+
+            phase4)
+              PHASE_BLOCK="## Phase 4 Focus — Polish, Accessibility & Audio
+
+          ### React Aria
+          - [ ] \`SectionNav\` uses \`RadioGroup\` and \`Radio\` from \`react-aria-components\`
+          - [ ] \`RadioGroup\` has an \`aria-label\` describing its purpose
+          - [ ] Each \`Radio\` has a visible label or \`aria-label\` matching the section name
+          - [ ] No custom key handler overrides the default React Aria keyboard behaviour
+
+          ### Tone.js Lifecycle
+          - [ ] \`import('tone')\` is a dynamic import called only on first user gesture — never at module load
+          - [ ] Audio service follows exactly: \`idle → loading → playing → idle\` and \`idle → loading → error\`
+          - [ ] Every \`Tone.Player\`, \`Tone.Volume\`, \`Tone.CrossFade\` has \`.dispose()\` in \`dispose()\`
+          - [ ] \`setSection()\` crossfades via \`Volume.rampTo()\` — no abrupt \`.volume.value =\` assignments
+          - [ ] Vitest mock uses \`function(this) { ... }\` constructor pattern for all Tone.js classes
+
+          ### Accessibility
+          - [ ] \`prefers-reduced-motion\` detected reactively via \`MediaQueryList\` change event listener
+          - [ ] sr-only bio correctly serialises Lexical rich text (\`RootNode → ParagraphNode → TextNode\`)
+          - [ ] No \`aria-label\` on non-interactive or non-landmark elements
+          - [ ] Every new focusable element has a visible focus ring
+
+          ### Self-Hosted Fonts
+          - [ ] Font files served from same origin — no cross-origin font requests
+          - [ ] \`<link rel=\"preload\">\` present for variable font files used in the critical path
+          - [ ] \`@font-face\` declarations use \`font-display: swap\`
+          - [ ] No unused font weight axes loaded
+
+          ### EncryptedText Component
+          - [ ] Plain text in \`<span>\` with \`aria-label\` set to decrypted value for screen readers
+          - [ ] Scramble animation uses \`requestAnimationFrame\` — not \`setInterval\`
+          - [ ] Animation resolves immediately to final plaintext when \`prefers-reduced-motion: reduce\`"
+              ;;
+
+            *)
+              PHASE_BLOCK="## General Review
+
+          No specific phase detected from PR head branch. Applying the full generic checklist.
+          If this is a phase-specific PR, ensure the branch name follows
+          \`feat/phase-N\` or \`refactor/phase-N\`."
+              ;;
+          esac
+
+          # ── Previous findings context (re-review only) ──────────────────────
+          if [ "$HAS_PREVIOUS" = "true" ] && [ -n "$PREVIOUS_FINDINGS" ]; then
+            REREVIEW_CONTEXT="## Previous Review Findings
+
+          The following findings were raised in a prior review run for this PR.
+          For each finding below, determine whether it is RESOLVED, STILL OPEN, or if
+          there are NEW findings not present before.
+
+          \`\`\`json
+          ${PREVIOUS_FINDINGS}
+          \`\`\`
+
+          Include a Re-review Status table in your comment (see Required Output Format)."
+          else
+            REREVIEW_CONTEXT=""
+          fi
+
+          # ── Is this a re-review trigger? ───────────────────────────────────
+          if echo "$TRIGGER_BODY" | grep -qi "re-review\|rereview"; then
+            REVIEW_MODE="RE-REVIEW"
+          else
+            REVIEW_MODE="INITIAL REVIEW"
+          fi
+
+          # ── Write full prompt using EOF delimiter ───────────────────────────
+          {
+            echo "prompt<<PROMPT_EOF"
+            cat << INNER_EOF
+          REPO: $REPO
+          PR NUMBER: $PR_NUMBER
+          REVIEW MODE: $REVIEW_MODE
+
+          You are performing an exhaustive, line-by-line code review of this pull request.
+
+          $REREVIEW_CONTEXT
+
+          ---
+
+          ## Review Philosophy (Google Code Review Guide)
+
+          1. Correctness first — does this code do what it is supposed to do?
+          2. Maintainability second — will the next developer understand and safely change this?
+          3. Clarity third — is the code readable and consistent with established patterns?
+
+          Rules:
+          - Every finding must be specific and actionable. Vague observations are not findings.
+          - When you identify an issue, state: what is wrong, why it matters, and the exact fix.
+          - Do not penalise style choices consistent with the existing codebase.
+          - Never block a PR because the code is not perfect. Only block on genuine Critical or Major issues.
+          - Be precise with line numbers and file paths. Reference both the file and line for every finding.
+
+          ---
+
+          ## Severity Classification
+
+          ### 🔴 CRITICAL — blocks approval, must fix before merge
+          - Security vulnerabilities (injection, exposed secrets, unsafe permissions in workflows or code)
+          - Code that will not compile or will throw at runtime
+          - Data loss or corruption risk
+          - Broken functionality (features described in PRD-001 that do not work)
+          - SSR boundary violations (Three.js or browser-only modules imported server-side)
+
+          ### 🟠 MAJOR — blocks approval, must fix before merge
+          - Pod boundary violations (direct imports of another pod's internal files bypassing barrel)
+          - Missing barrel export discipline (internal paths re-exported publicly from mod.ts)
+          - Missing tests for newly exported functions or components
+          - Effect-ts pattern deviations (bare try/catch inside Effects, hand-written types duplicating Zod schemas, new Error() instead of TaggedError)
+          - PRD-001 §4.4 architectural decisions violated
+          - Missing .dispose() on Three.js geometries, materials, or textures
+          - Missing React.lazy + Suspense on canvas components
+          - SSR safety issues that degrade (not break) functionality
+
+          ### 🟡 MINOR — advisory only, never blocks approval
+          - Style preferences within Biome config rules
+          - Naming improvements
+          - Documentation gaps in non-critical paths
+          - Non-critical refactoring opportunities
+          - Magic numbers in low-risk contexts
+          - Minor performance improvements
+
+          ---
+
+          $PHASE_BLOCK
+
+          ---
+
+          ## Architecture & Pod Structure (all phases)
+          - [ ] Each feature lives in app/features/<pod>/ — no cross-cutting logic in a single file
+          - [ ] mod.ts barrel is the ONLY public export surface — external code never imports internal paths
+          - [ ] mod.ts exports only the minimum needed — implementation details stay private
+          - [ ] File suffix convention enforced:
+                *.client.component.tsx  → CSR only (Three.js, browser APIs)
+                *.iso.component.tsx     → SSR + hydration safe
+                *.service.ts            → Effect-ts service layers / factories
+                *.repository.ts         → Raw data access
+                *.schema.ts             → Zod schema definitions
+                *.generator.ts          → Pure TS geometry/data generators
+                *.util.ts               → Shared constants and utilities
+                *.unit.test.ts          → Vitest unit tests (node env)
+                *.component.test.tsx    → Vitest component tests (jsdom env)
+
+          ## TypeScript Strictness (all phases)
+          - [ ] No implicit \`any\` — every variable and function parameter is typed
+          - [ ] No \`// @ts-ignore\` or \`// @ts-expect-error\` without an explanation comment
+          - [ ] Types derived from Zod schemas via \`z.infer<>\` — never written by hand
+          - [ ] No unsafe type assertions (\`as SomeType\`) without documented justification
+          - [ ] \`strict: true\` compliance — no implicit returns, no unused parameters
+
+          ## Testing (all phases)
+          - [ ] Every new exported function or component has at least one test
+          - [ ] Unit tests in \`*.unit.test.ts\` files (node environment by default)
+          - [ ] Component tests in \`*.component.test.tsx\` with \`// @vitest-environment jsdom\`
+          - [ ] Tests query elements by accessible role/label — NEVER by CSS class or component name
+          - [ ] Vitest constructor mocks use \`function(this) { this.x = ... }\` pattern
+          - [ ] New MSW handlers match the correct HTTP method and URL pattern
+
+          ## Code Quality (all phases)
+          - [ ] No \`console.log\`, \`console.warn\`, or \`console.error\` in production code
+          - [ ] No commented-out code blocks
+          - [ ] No hardcoded secrets, API URLs, or environment-specific values outside env vars
+          - [ ] Functions have a single clear responsibility (SRP)
+          - [ ] Magic numbers have named constants
+
+          ## Commit Hygiene
+          - [ ] Commit messages follow: \`type(scope): description\`
+                Types: feat | fix | refactor | chore | test | docs | style | build | perf
+          - [ ] No \`[ci-stub]\` commits present — must be removed before merge
+
+          ---
+
+          ## Required Output Format
+
+          Your PR comment MUST follow this exact structure. Do not deviate from it.
+
+          ---
+          ## 🔍 PR Review — [Phase name or "General"]
+
+          <details>
+          <summary>🧠 Reasoning</summary>
+
+          [For each 🔴 Critical and 🟠 Major finding only: 2–4 sentences explaining
+          WHY that severity classification applies and WHAT the specific risk is.
+          Do NOT repeat the finding here — only the reasoning behind the severity.
+          Omit this section entirely if there are no Critical or Major findings.]
+
+          </details>
+
+          ---
+
+          ### 🔴 Critical Issues (N) — must fix before merge
+
+          [If none, write: **None.**]
+
+          **[C1] \`path/to/file.ts:42\` — Short descriptive title**
+          What is wrong. Why it matters. Exact fix with code if applicable.
+
+          ---
+
+          ### 🟠 Major Issues (N) — must fix before merge
+
+          [If none, write: **None.**]
+
+          **[M1] \`path/to/file.ts:18\` — Short descriptive title**
+          What is wrong. Why it matters. Exact fix.
+
+          ---
+
+          ### 🟡 Minor Issues (N) — advisory, will not block merge
+
+          [If none, write: **None.**]
+
+          **[m1] \`path/to/file.ts:7\` — Short descriptive title**
+          Suggestion.
+
+          ---
+
+          [INCLUDE THIS SECTION ONLY ON RE-REVIEWS — omit on initial review]
+          ### 🔄 Re-review Status
+
+          | ID | Status | Notes |
+          |----|--------|-------|
+          | C1 | ✅ RESOLVED | Brief note on the fix |
+          | M1 | ❌ STILL OPEN | What specifically remains |
+          | NEW-C1 | 🔴 NEW CRITICAL | New finding not in prior run |
+
+          ---
+
+          **Verdict: REQUEST_CHANGES** — N critical, N major issues must be resolved before merge.
+          OR
+          **Verdict: APPROVED** — All critical and major issues resolved. N minor issues noted for future attention.
+
+          ---
+
+          ## Approval Rules (strictly enforce)
+
+          APPROVE if and only if: critical_count == 0 AND major_count == 0
+          REQUEST_CHANGES if:     critical_count > 0 OR major_count > 0
+
+          Minor issues are always listed but NEVER block approval.
+
+          On re-review: verify every prior Critical and Major finding is marked RESOLVED
+          before considering APPROVE. New findings discovered during re-review are treated
+          with the same blocking rules.
+
+          ---
+
+          ## Diff Source
+
+          The PR diff has been pre-filtered and written to /tmp/filtered-diff.patch.
+          Start your review by reading this file using the Read tool.
+
+          Do NOT run \`gh pr diff\` — it is not in your allowed tools.
+
+          Files absent from the filtered diff were excluded intentionally
+          (Claude config, this workflow, process docs, Markdown).
+          Do not attempt to Read those files or comment on them.
+
+          ---
+
+          ## Findings Cache (run last — mandatory)
+
+          After posting your PR comment and submitting the formal review, write a JSON
+          summary of all findings to /tmp/claude-findings.json using printf:
+
+            printf '%s' '<JSON string>' > /tmp/claude-findings.json
+
+          JSON schema (strict — no extra fields):
+          {
+            "review_sha": "<the commit SHA at the head of this PR>",
+            "pr_number": $PR_NUMBER,
+            "verdict": "request_changes" | "approved",
+            "findings": [
+              {
+                "id": "C1",
+                "severity": "critical" | "major" | "minor",
+                "file": "path/to/file.ts",
+                "line": 42,
+                "title": "Short title matching comment",
+                "status": "open" | "resolved"
+              }
+            ]
+          }
+
+          Use "resolved" only for findings explicitly confirmed resolved in a re-review.
+          Use "open" for all findings on an initial review and for unresolved re-review findings.
+
+          ---
+
+          ## Submit Formal Review (run after posting comment and writing findings cache)
+
+          If ANY critical or major issue is open:
+            gh pr review $PR_NUMBER --request-changes --body "Critical/major issues found — see inline comments. Re-trigger with @claude re-review after fixes."
+
+          If zero critical and zero major issues:
+            gh pr review $PR_NUMBER --approve --body "All critical and major issues resolved. Ready to merge."
+          INNER_EOF
+            echo "PROMPT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # ── Step 7: Run Claude review ──────────────────────────────────────────
       - name: Claude code review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@18c2b94d83ba2647c1a5e025edb06441c4a7b46e  # v1
+        env:
+          # Explicit token so gh pr review has pull-requests:write credentials.
+          GH_TOKEN: ${{ github.token }}
         with:
-          # OAuth token from your Claude Pro subscription (zero API cost).
-          # Generated via: claude setup-token
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: ${{ steps.generate-prompt.outputs.prompt }}
 
-          # Project-specific review checklist.
-          # Claude reads the full diff AND the complete content of every
-          # changed file before reviewing.
-          prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
-
-            Perform an exhaustive, line-by-line code review of this pull request.
-            Be specific — reference exact file names and line numbers for every finding.
-            Do not give praise for things that are merely correct. Focus on problems,
-            risks, and improvements. Every finding must be actionable.
-
-            Review against these project standards:
-
-            ## Architecture & Pod Structure
-            - [ ] Each feature lives in app/features/<pod>/ — no cross-cutting logic in a single file
-            - [ ] mod.ts barrel is the ONLY public export surface — external code never imports internal paths
-            - [ ] mod.ts exports only the minimum needed — implementation details stay private
-            - [ ] File suffix convention enforced:
-                  *.client.component.tsx  → CSR only (Three.js, browser APIs)
-                  *.iso.component.tsx     → SSR + hydration safe
-                  *.service.ts            → Effect-ts service layers / factories
-                  *.repository.ts         → Raw data access
-                  *.schema.ts             → Zod schema definitions
-                  *.generator.ts          → Pure TS geometry/data generators
-                  *.util.ts               → Shared constants and utilities
-                  *.unit.test.ts          → Vitest unit tests (node env)
-                  *.component.test.tsx    → Vitest component tests (jsdom env)
-
-            ## TypeScript Strictness
-            - [ ] No implicit `any` — every variable and function parameter is typed
-            - [ ] No `// @ts-ignore` or `// @ts-expect-error` without an explanation comment
-            - [ ] Types are derived from Zod schemas via `z.infer<>` — never written by hand
-            - [ ] No unsafe type assertions (`as SomeType`) without documented justification
-            - [ ] `strict: true` compliance — no implicit returns, no unused parameters
-
-            ## Effect-ts (CMS service layer only)
-            - [ ] Errors are `Data.TaggedError` subclasses — never plain `new Error()`
-            - [ ] Effects are composed with `Effect.gen` / `.pipe` — no bare `try/catch` inside Effects
-            - [ ] `Layer` / `Context.Tag` DI pattern is followed — no `new Service()` in callers
-            - [ ] Effect-ts is NEVER used in React components or Three.js code
-
-            ## React & SSR Safety
-            - [ ] `*.client.component.tsx` files are never statically imported from SSR paths
-            - [ ] `useEffect` dependency arrays are exhaustive — no missing deps
-            - [ ] No `window`, `document`, or `navigator` access at module scope or during SSR
-            - [ ] `React.lazy` + `Suspense` used for all Three.js canvas components
-
-            ## Three.js / React Three Fiber
-            - [ ] Geometries and materials are memoized (`useMemo`) — not recreated on every render
-            - [ ] All Three.js objects call `.dispose()` in the `useEffect` cleanup or `onUnmount`
-            - [ ] No direct DOM manipulation inside R3F components
-            - [ ] GLSL shaders are imported as typed strings via vite-plugin-glsl, not inline template literals
-
-            ## Tone.js (audio pod)
-            - [ ] `import('tone')` is dynamic and only called on first user gesture (autoplay policy)
-            - [ ] Every Tone.js node has a corresponding `.dispose()` call in `dispose()`
-            - [ ] State machine transitions follow idle → playing → idle / idle → error exactly
-            - [ ] `setSection()` crossfades via `Volume.rampTo()` — no abrupt cuts
-
-            ## Testing
-            - [ ] Every new exported function or component has at least one test
-            - [ ] Unit tests are in `*.unit.test.ts` files with `// @vitest-environment node` (default)
-            - [ ] Component tests are in `*.component.test.tsx` with `// @vitest-environment jsdom`
-            - [ ] Tests query elements by accessible role/label — NEVER by CSS class or component name
-            - [ ] Vitest constructor mocks use `function(this) { this.x = ... }` pattern
-              (Vite/esbuild transpiles `function() { return obj }` → `() => obj`, breaking `new`)
-            - [ ] New MSW handlers match the correct HTTP method and URL pattern
-
-            ## Accessibility
-            - [ ] Interactive widgets with complex keyboard patterns use React Aria Components
-              (currently used: RadioGroup + Radio in SectionNav)
-            - [ ] `aria-label` is only on interactive or landmark elements — not decorative divs
-            - [ ] All images have meaningful `alt` text, or `alt=""` + `aria-hidden="true"` if decorative
-            - [ ] New focusable elements have visible focus rings
-            - [ ] Screen-reader-only content uses the `sr-only` Tailwind class, not `display:none`
-
-            ## Code Quality
-            - [ ] No `console.log`, `console.warn`, or `console.error` left in production code
-            - [ ] No commented-out code blocks
-            - [ ] No hardcoded secrets, API URLs, or environment-specific values outside env vars
-            - [ ] Functions have a single clear responsibility (SRP)
-            - [ ] Magic numbers have named constants
-
-            ## Commit Hygiene (if commits are visible)
-            - [ ] Commit messages follow the convention: `type(scope): description`
-                  Types: feat | fix | refactor | chore | test | docs | style | build
-
-            Post inline comments on specific lines for each issue found.
-            Post a single top-level PR comment with a concise summary of:
-              - Critical issues (must fix before merge)
-              - Suggestions (should fix, not blocking)
-              - Positives (optional — only if something is notably well done)
-
+          # Allowed tools:
+          #   mcp__github_inline_comment__create_inline_comment — post inline diff comments
+          #   gh pr comment    — post top-level PR summary comment
+          #   gh pr view       — read PR metadata (title, description, head SHA)
+          #   gh pr review     — submit APPROVE or REQUEST_CHANGES (hard gate)
+          #   printf * > /tmp/claude-findings.json — write findings cache
+          #   Read             — read /tmp/filtered-diff.patch and changed file contents
+          #
+          # Intentionally absent:
+          #   gh pr diff       — filtered diff is pre-generated; Claude cannot fetch raw diff
           claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(printf * > /tmp/claude-findings.json),Read"
+
+      # ── Step 8: Save findings to cache ────────────────────────────────────
+      # Runs even when Claude submits REQUEST_CHANGES so re-reviews can diff.
+      - name: Save review findings
+        if: always()
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+        with:
+          path: /tmp/claude-findings.json
+          key: review-pr-${{ steps.pr-info.outputs.pr_number }}-${{ github.sha }}

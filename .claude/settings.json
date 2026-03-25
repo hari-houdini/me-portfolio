@@ -1,0 +1,39 @@
+{
+	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+	"cleanupPeriodDays": 40,
+	"includeGitInstructions": true,
+	"permissions": {
+		"allow": ["Bash(pnpm run lint)", "Bash(pnpm run test *)"],
+		"deny": [
+			"Bash(git push *)",
+			"Bash(curl *)",
+			"Read(./.env)",
+			"Read(./.env.*)",
+			"Read(./secrets/**)"
+		]
+	},
+	"model": "claude-sonnet-4-6",
+	"effortLevel": "high",
+	"hooks": {
+		"PostToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "pnpm check",
+						"timeout": 60
+					}
+				]
+			}
+		]
+	},
+	"env": {
+		"CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+		"OTEL_METRICS_EXPORTER": "otlp"
+	},
+	"companyAnnouncements": [
+		"Welcome to Houdini Labs! To know more, visit https://harihoudini.dev",
+		"Reminder: Code reviews required for all PRs"
+	]
+}
