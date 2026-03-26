@@ -2,6 +2,7 @@
 	"$schema": "https://json.schemastore.org/claude-code-settings.json",
 	"cleanupPeriodDays": 40,
 	"includeGitInstructions": true,
+	"autoMemoryEnabled": true,
 	"permissions": {
 		"allow": ["Bash(pnpm run lint)", "Bash(pnpm run test *)"],
 		"deny": [
@@ -15,6 +16,31 @@
 	"model": "claude-sonnet-4-6",
 	"effortLevel": "high",
 	"hooks": {
+		"SessionStart": [
+			{
+				"matcher": "startup",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
+						"timeout": 10,
+						"statusMessage": "Loading project context..."
+					}
+				]
+			}
+		],
+		"PreToolUse": [
+			{
+				"matcher": "Write|Edit",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/protect-files.sh",
+						"timeout": 5
+					}
+				]
+			}
+		],
 		"PostToolUse": [
 			{
 				"matcher": "Edit|Write",
@@ -23,6 +49,29 @@
 						"type": "command",
 						"command": "pnpm check",
 						"timeout": 60
+					}
+				]
+			},
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run-test.sh",
+						"timeout": 30,
+						"statusMessage": "Running tests for edited file..."
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-checklist.sh",
+						"timeout": 15,
+						"async": true
 					}
 				]
 			}
