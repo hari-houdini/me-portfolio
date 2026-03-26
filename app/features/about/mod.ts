@@ -7,4 +7,4 @@
  */
 
 export type { AboutOverlayProps } from "./about-overlay.iso.component";
-export { AboutOverlay } from "./about-overlay.iso.component";
+export { AboutOverlay, extractText } from "./about-overlay.iso.component";

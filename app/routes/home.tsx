@@ -15,7 +15,7 @@
 
 import { Effect } from "effect";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { AboutOverlay } from "~/features/about/mod";
+import { AboutOverlay, extractText } from "~/features/about/mod";
 import { AudioToggle } from "~/features/audio/mod";
 import { ContactOverlay } from "~/features/contact/mod";
 import { HeroOverlay } from "~/features/hero/mod";
@@ -136,17 +136,20 @@ function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 	useEffect(() => {
 		if (!enabled || !scrollEl) return;
 
-		// Dynamically import GSAP to keep it off the SSR critical path
+		// Guard against the unmount-before-import race: if the component unmounts
+		// while the dynamic import is in flight, the teardown runs first (finding
+		// cleanup undefined), then the import resolves and would create a
+		// ScrollTrigger that is never killed. isMounted prevents late creation.
+		let isMounted = true;
 		let cleanup: (() => void) | undefined;
 
 		import("gsap")
 			.then(({ gsap }) =>
 				import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+					if (!isMounted) return;
+
 					gsap.registerPlugin(ScrollTrigger);
 
-					// Single scroll trigger covering the entire scroll container.
-					// Both trigger and scroller must point to the same scrolling element
-					// so ScrollTrigger observes the correct scroll events.
 					const trigger = ScrollTrigger.create({
 						trigger: scrollEl,
 						scroller: scrollEl,
@@ -154,7 +157,6 @@ function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 						end: "bottom bottom",
 						snap: {
 							snapTo: (rawValue: number) => {
-								// rawValue is progress 0→1 of the scroll container
 								for (let i = 0; i < SNAP_ANCHORS.length - 1; i++) {
 									const lo = SNAP_ANCHORS[i];
 									const hi = SNAP_ANCHORS[i + 1];
@@ -182,6 +184,7 @@ function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 			});
 
 		return () => {
+			isMounted = false;
 			cleanup?.();
 		};
 	}, [scrollEl, enabled]);
@@ -255,11 +258,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 			<div className="sr-only" aria-hidden="false">
 				<h1>{siteConfig.name}</h1>
 				<p>{siteConfig.tagline}</p>
-				<p>
-					{typeof about.bio === "object" && about.bio !== null
-						? JSON.stringify(about.bio)
-						: ""}
-				</p>
+				<p>{about.bio ? extractText(about.bio) : ""}</p>
 				<ul>
 					{projects.map((p) => (
 						<li key={p.id}>{p.title}</li>

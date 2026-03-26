@@ -33,7 +33,7 @@ interface LexicalNode {
 	children?: LexicalNode[];
 }
 
-function extractText(node: unknown): string {
+export function extractText(node: unknown): string {
 	if (!node || typeof node !== "object") return "";
 	const n = node as LexicalNode;
 	if (n.type === "text" && typeof n.text === "string") return n.text;

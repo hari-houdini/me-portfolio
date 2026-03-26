@@ -21,7 +21,7 @@
 
 import { ScrollControls, useScroll } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GalaxyScene } from "~/features/galaxy/mod";
 import { WarpScene } from "~/features/warp/mod";
 import type { About, Contact, Project, SiteConfig } from "~/services/cms/mod";
@@ -43,6 +43,12 @@ function SceneContent({
 	const scroll = useScroll();
 	const [scrollOffset, setScrollOffset] = useState(0);
 
+	// Track which section (0/1/2) is active so we only notify the parent when
+	// the section changes — not on every 60fps float. This prevents the HTML
+	// overlay tree (HeroOverlay, AboutOverlay, WorkOverlay, ContactOverlay) from
+	// reconciling at 60fps. -1 means no section has been notified yet.
+	const activeSectionRef = useRef(-1);
+
 	// Expose drei's internal scroll element to the parent (home.tsx) so that
 	// GSAP ScrollTrigger can attach to the element that actually scrolls.
 	// scroll.el is the overflow:scroll div ScrollControls injects into the DOM.
@@ -54,11 +60,18 @@ function SceneContent({
 
 	// useFrame is the correct R3F mechanism for per-frame work inside <Canvas>.
 	// It stops automatically when the component unmounts — no manual cleanup needed.
-	// Previously this used a requestAnimationFrame loop that was never cancelled.
 	useFrame(() => {
 		const o = scroll.offset;
 		setScrollOffset(o);
-		onScrollChange(o);
+
+		// Gate parent notification to section changes only.
+		// The parent's setScrollOffset drives HTML overlay visibility — no need to
+		// call it at 60fps since the section thresholds are 0.33 and 0.66.
+		const section = o < 0.33 ? 0 : o < 0.66 ? 1 : 2;
+		if (section !== activeSectionRef.current) {
+			activeSectionRef.current = section;
+			onScrollChange(o);
+		}
 	});
 
 	// Warp section weight: 0 → galaxy visible, 1 → warp tunnel visible
