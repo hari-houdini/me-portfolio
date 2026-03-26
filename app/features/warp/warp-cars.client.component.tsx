@@ -14,7 +14,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { LightPodData, WarpConfig } from "./warp.generator";
 import { generateWarp } from "./warp.generator";
@@ -72,6 +72,10 @@ export function WarpCars({
 			}
 		}
 	}, [lightPods, podCount]);
+
+	// Dispose geometry on unmount. The <pointsMaterial> is JSX-declared so R3F
+	// auto-disposes it; only the programmatically constructed geometry needs cleanup.
+	useEffect(() => () => geometry.dispose(), [geometry]);
 
 	useFrame((_, delta) => {
 		const pods = lightPods as LightPodData[];

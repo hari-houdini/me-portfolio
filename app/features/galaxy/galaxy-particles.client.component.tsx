@@ -13,7 +13,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { type GalaxyConfig, generateGalaxy } from "./galaxy.generator";
 import galaxyFrag from "./galaxy.shader.frag";
@@ -70,6 +70,17 @@ export function GalaxyParticles({ config, opacity = 1 }: GalaxyParticlesProps) {
 				vertexColors: false,
 			}),
 		[],
+	);
+
+	// Dispose geometry and material on unmount.
+	// R3F does not auto-dispose objects passed via geometry={geo} or
+	// <primitive object={...}> — only JSX-declared primitives are managed.
+	useEffect(
+		() => () => {
+			geometry.dispose();
+			material.dispose();
+		},
+		[geometry, material],
 	);
 
 	// Update uniforms every frame

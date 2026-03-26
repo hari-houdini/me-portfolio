@@ -11,7 +11,8 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 interface WarpNebulaProps {
@@ -56,20 +57,39 @@ void main() {
 `;
 
 export function WarpNebula({ opacity = 1 }: WarpNebulaProps) {
+	// Keep a ref so useFrame always reads the latest opacity without needing
+	// opacity in its own dep list (useFrame recreates its callback each render).
+	const opacityRef = useRef(opacity);
+	opacityRef.current = opacity;
+
+	// Create the material once — dep array is intentionally empty.
+	// Previously [opacity] caused a new ShaderMaterial on every scroll frame
+	// at 60fps, leaking GPU memory because <primitive> objects are not
+	// auto-disposed by R3F. The opacity uniform is updated in useFrame instead.
 	const material = useMemo(
 		() =>
 			new THREE.ShaderMaterial({
 				vertexShader: NEBULA_VERT,
 				fragmentShader: NEBULA_FRAG,
 				uniforms: {
-					uOpacity: { value: opacity },
+					// Initial value is 1; useFrame sets the correct value on the
+					// very first frame, so there is no visible flicker at mount.
+					uOpacity: { value: 1 },
 				},
 				transparent: true,
 				depthWrite: false,
 				side: THREE.BackSide, // render inside of the sphere
 			}),
-		[opacity],
+		[],
 	);
+
+	// Update the opacity uniform every frame via the ref — never recreate the material
+	useFrame(() => {
+		material.uniforms.uOpacity.value = opacityRef.current;
+	});
+
+	// Dispose on unmount — R3F does not dispose <primitive> objects automatically
+	useEffect(() => () => material.dispose(), [material]);
 
 	return (
 		<mesh>

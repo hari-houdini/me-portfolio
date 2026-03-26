@@ -12,7 +12,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { WarpConfig } from "./warp.generator";
 import { generateWarp } from "./warp.generator";
@@ -69,6 +69,16 @@ export function WarpStars({
 				blending: THREE.AdditiveBlending,
 			}),
 		[resolved.tunnelDepth, warpSpeed],
+	);
+
+	// Dispose geometry and material on unmount — neither is auto-disposed by R3F
+	// when passed via geometry={geo} or <primitive object={...}>.
+	useEffect(
+		() => () => {
+			geometry.dispose();
+			material.dispose();
+		},
+		[geometry, material],
 	);
 
 	useFrame((_, delta) => {

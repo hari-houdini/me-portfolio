@@ -5,7 +5,7 @@
  *  1. Renders a fixed-position <Canvas> that covers the viewport
  *  2. Wraps everything in drei's <ScrollControls> for scroll-driven animation
  *  3. Mounts the <CameraRig> which drives camera along the bezier path
- *  4. Renders both scenes (galaxy + city) in a single scene graph — opacity
+ *  4. Renders both scenes (galaxy + warp) in a single scene graph — opacity
  *     transitions between them are driven by scroll progress
  *  5. Applies the post-processing effect stack via <PostFx>
  *
@@ -20,8 +20,8 @@
 "use client";
 
 import { ScrollControls, useScroll } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
-import { useRef, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useEffect, useState } from "react";
 import { GalaxyScene } from "~/features/galaxy/mod";
 import { WarpScene } from "~/features/warp/mod";
 import type { About, Contact, Project, SiteConfig } from "~/services/cms/mod";
@@ -35,33 +35,31 @@ import { SECTION_COUNT } from "./scroll-section.util";
 
 function SceneContent({
 	onScrollChange,
+	onScrollElement,
 }: {
 	onScrollChange: (offset: number) => void;
+	onScrollElement?: (el: HTMLElement) => void;
 }) {
 	const scroll = useScroll();
-	const rafRef = useRef<number>(0);
-
-	// Propagate scroll offset to parent on every frame for overlay positioning
-	// and post-FX parameterisation.  useFrame is not available outside Canvas
-	// so we use a rAF loop attached to the scroll object.
 	const [scrollOffset, setScrollOffset] = useState(0);
 
-	// Sync scroll offset with parent via a callback on each fiber frame tick.
-	// We update state here to trigger re-renders for PostFx parameterisation.
-	const updateOffset = () => {
+	// Expose drei's internal scroll element to the parent (home.tsx) so that
+	// GSAP ScrollTrigger can attach to the element that actually scrolls.
+	// scroll.el is the overflow:scroll div ScrollControls injects into the DOM.
+	useEffect(() => {
+		if (scroll.el) {
+			onScrollElement?.(scroll.el as HTMLElement);
+		}
+	}, [scroll.el, onScrollElement]);
+
+	// useFrame is the correct R3F mechanism for per-frame work inside <Canvas>.
+	// It stops automatically when the component unmounts — no manual cleanup needed.
+	// Previously this used a requestAnimationFrame loop that was never cancelled.
+	useFrame(() => {
 		const o = scroll.offset;
 		setScrollOffset(o);
 		onScrollChange(o);
-		rafRef.current = requestAnimationFrame(updateOffset);
-	};
-
-	// Start the rAF loop once on mount — cancelled on unmount via effect.
-	// We use a vanilla ref flag to avoid starting it twice in StrictMode.
-	const started = useRef(false);
-	if (!started.current && typeof window !== "undefined") {
-		started.current = true;
-		rafRef.current = requestAnimationFrame(updateOffset);
-	}
+	});
 
 	// Warp section weight: 0 → galaxy visible, 1 → warp tunnel visible
 	// Transitions in the 0.5→1.0 range of scroll progress (Section 2→3)
@@ -99,9 +97,15 @@ export interface ExperienceProps {
 	contact: Contact;
 	projects: Project[];
 	onScrollChange?: (offset: number) => void;
+	/** Called once with drei's internal scroll element so the parent can
+	 *  attach GSAP ScrollTrigger to the element that actually scrolls. */
+	onScrollElement?: (el: HTMLElement) => void;
 }
 
-export function Experience({ onScrollChange = () => {} }: ExperienceProps) {
+export function Experience({
+	onScrollChange = () => {},
+	onScrollElement,
+}: ExperienceProps) {
 	return (
 		<Canvas
 			style={{
@@ -120,7 +124,10 @@ export function Experience({ onScrollChange = () => {} }: ExperienceProps) {
 			dpr={[1, 2]}
 		>
 			<ScrollControls pages={SECTION_COUNT} damping={0.3}>
-				<SceneContent onScrollChange={onScrollChange} />
+				<SceneContent
+					onScrollChange={onScrollChange}
+					onScrollElement={onScrollElement}
+				/>
 			</ScrollControls>
 		</Canvas>
 	);

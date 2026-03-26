@@ -13,7 +13,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { generateWarp } from "./warp.generator";
 import warpRoadFrag from "./warp-road.shader.frag";
@@ -52,6 +52,16 @@ export function WarpRoad({ scrollSpeed = 30, opacity = 1 }: WarpRoadProps) {
 				blending: THREE.AdditiveBlending,
 			}),
 		[resolved.roadDepth],
+	);
+
+	// Dispose geometry and material on unmount — neither is auto-disposed by R3F
+	// when passed via geometry={geo} or <primitive object={...}>.
+	useEffect(
+		() => () => {
+			geometry.dispose();
+			material.dispose();
+		},
+		[geometry, material],
 	);
 
 	useFrame((_, delta) => {

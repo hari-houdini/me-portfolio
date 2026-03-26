@@ -14,14 +14,7 @@
  */
 
 import { Effect } from "effect";
-import {
-	lazy,
-	Suspense,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { AboutOverlay } from "~/features/about/mod";
 import { AudioToggle } from "~/features/audio/mod";
 import { ContactOverlay } from "~/features/contact/mod";
@@ -131,12 +124,17 @@ const SNAP_ANCHORS = [0, 0.33, 0.66, 1] as const;
  */
 const SNAP_THRESHOLD = 0.12;
 
-function useScrollSnap(
-	containerRef: React.RefObject<HTMLElement | null>,
-	enabled: boolean,
-) {
+/**
+ * useScrollSnap attaches GSAP's magnetic snap to drei's internal scroll element.
+ *
+ * The scrollEl parameter must be the element returned by drei's useScroll().el —
+ * the overflow:scroll div that ScrollControls injects into the canvas DOM.
+ * The outer container div (overflow:hidden, height:100vh) never scrolls and
+ * must NOT be used as trigger/scroller here.
+ */
+function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 	useEffect(() => {
-		if (!enabled || !containerRef.current) return;
+		if (!enabled || !scrollEl) return;
 
 		// Dynamically import GSAP to keep it off the SSR critical path
 		let cleanup: (() => void) | undefined;
@@ -146,37 +144,28 @@ function useScrollSnap(
 				import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
 					gsap.registerPlugin(ScrollTrigger);
 
-					const container = containerRef.current;
-					if (!container) return;
-
 					// Single scroll trigger covering the entire scroll container.
-					// snap.snapTo receives a function that returns the normalised target
-					// position [0,1] — we map our three anchors to this space.
+					// Both trigger and scroller must point to the same scrolling element
+					// so ScrollTrigger observes the correct scroll events.
 					const trigger = ScrollTrigger.create({
-						trigger: container,
+						trigger: scrollEl,
+						scroller: scrollEl,
 						start: "top top",
 						end: "bottom bottom",
 						snap: {
-							// directional=true: only snap in the direction of scroll
-							// inertia=false: let ScrollTrigger own the momentum
 							snapTo: (rawValue: number) => {
 								// rawValue is progress 0→1 of the scroll container
 								for (let i = 0; i < SNAP_ANCHORS.length - 1; i++) {
 									const lo = SNAP_ANCHORS[i];
 									const hi = SNAP_ANCHORS[i + 1];
-									// If we are within one section zone…
 									if (rawValue >= lo && rawValue <= hi) {
 										const mid = lo + (hi - lo) * SNAP_THRESHOLD;
-										// …snap back to section start until past threshold
 										return rawValue < mid ? lo : hi;
 									}
 								}
 								return rawValue;
 							},
 							duration: { min: 0.3, max: 0.6 },
-							// delay: how long the user must be idle before snap fires
-							// 0.15s gives enough window to scroll intentionally without
-							// the snap fighting the gesture
 							delay: 0.15,
 							ease: "power2.inOut",
 						},
@@ -195,7 +184,7 @@ function useScrollSnap(
 		return () => {
 			cleanup?.();
 		};
-	}, [containerRef, enabled]);
+	}, [scrollEl, enabled]);
 }
 
 // ---------------------------------------------------------------------------
@@ -234,7 +223,13 @@ function useIs3DCapable() {
 export default function Home({ loaderData }: Route.ComponentProps) {
 	const { siteConfig, about, contact, projects } = loaderData;
 	const is3DCapable = useIs3DCapable();
-	const containerRef = useRef<HTMLDivElement>(null);
+
+	// drei's internal scroll element — set once via the Experience onScrollElement
+	// callback. ScrollTrigger must observe this element, not the outer container.
+	const [snapEl, setSnapEl] = useState<HTMLElement | null>(null);
+	const handleScrollElement = useCallback((el: HTMLElement) => {
+		setSnapEl(el);
+	}, []);
 
 	// Track scroll progress for overlay visibility
 	const [scrollOffset, setScrollOffset] = useState(0);
@@ -242,13 +237,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 		setScrollOffset(offset);
 	}, []);
 
-	// Section visibility thresholds (per section's scroll range 0→1)
-	const section = Math.round(scrollOffset * 2); // 0, 1, or 2
-	const isSection2 = section === 1;
-	const isSection3 = section === 2;
+	// Section visibility — aligned with SECTION_OFFSETS (0, 0.33, 0.66).
+	// Previously used Math.round(offset * 2) which has thresholds at 0.25/0.75,
+	// misaligned with the snap anchors at 0.33/0.66.
+	const isSection2 = scrollOffset >= 0.33 && scrollOffset < 0.66;
+	const isSection3 = scrollOffset >= 0.66;
 
-	// Enable GSAP snap only when canvas is mounted and 3D capable
-	useScrollSnap(containerRef, is3DCapable);
+	// Enable GSAP snap only when drei's scroll element is available and 3D capable
+	useScrollSnap(snapEl, is3DCapable);
 
 	return (
 		<>
@@ -276,10 +272,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 			    3D Experience — desktop with WebGL2 support only
 			    ---------------------------------------------------------------- */}
 			{is3DCapable ? (
-				<div
-					ref={containerRef}
-					style={{ width: "100vw", height: "100vh", overflow: "hidden" }}
-				>
+				<div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
 					<Suspense
 						fallback={
 							<div className="fixed inset-0 flex items-center justify-center bg-[var(--color-void)]">
@@ -295,6 +288,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 							contact={contact}
 							projects={projects}
 							onScrollChange={handleScrollChange}
+							onScrollElement={handleScrollElement}
 						/>
 					</Suspense>
 
