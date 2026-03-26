@@ -21,13 +21,13 @@ import { Effect } from "effect";
 import type { z } from "zod";
 import type { CmsError } from "./cms.errors";
 import { CmsNetworkError, CmsNotFoundError, CmsParseError } from "./cms.errors";
-import type { About, Contact, Project, SiteConfig } from "./cms.schemas";
+import type { About, Contact, Project, SiteConfig } from "./cms.schema";
 import {
 	AboutSchema,
 	ContactSchema,
 	ProjectsListResponseSchema,
 	SiteConfigSchema,
-} from "./cms.schemas";
+} from "./cms.schema";
 
 // ---------------------------------------------------------------------------
 // Internal helper
