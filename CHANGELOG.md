@@ -1,3 +1,24 @@
+# [1.3.0](https://github.com/hari-houdini/me-portfolio/compare/v1.2.0...v1.3.0) (2026-03-26)
+
+
+### Bug Fixes
+
+* **3d:** resolve 4 Major issues from second Claude review ([e3ce0fc](https://github.com/hari-houdini/me-portfolio/commit/e3ce0fcd6a77f9612a924b931aff21b57688dc7a))
+* **3d:** resolve 5 Major issues from Claude review ([144f4c9](https://github.com/hari-houdini/me-portfolio/commit/144f4c94ceeab4726ce1eec37f8eb38c69898ab7))
+* **scroll:** tune Section 1→2 snap threshold for reliable engagement ([9b0426e](https://github.com/hari-houdini/me-portfolio/commit/9b0426e042b40174a9ac9d199bfd45915b7b189d))
+
+
+### Features
+
+* **phase-3/audio:** add Web Audio ambient synthesis and accessible toggle ([5b6425b](https://github.com/hari-houdini/me-portfolio/commit/5b6425be33cca5a38d2f5734580f43585c9c00ad))
+* **phase-3/city:** add procedural cyberpunk city with rain, car lights, and neon signs ([28d877a](https://github.com/hari-houdini/me-portfolio/commit/28d877a867e881403f2789fa7011d0542fe479de))
+* **phase-3/experience:** add R3F canvas, scroll-driven camera rig, and post-processing ([771b5a2](https://github.com/hari-houdini/me-portfolio/commit/771b5a230de156ca4a71bf6052416667adeaa0b2))
+* **phase-3/galaxy:** add spiral galaxy particle system with GLSL shaders and 3D titles ([7904484](https://github.com/hari-houdini/me-portfolio/commit/790448498ae0bb8fad94a203709a79c32467b27b))
+* **phase-3/integration:** wire full 3D experience into home route with GSAP snap and mobile fallback ([798d142](https://github.com/hari-houdini/me-portfolio/commit/798d14256885e8bd8d729aac73dcec4ef7cf6a4c)), closes [#050520](https://github.com/hari-houdini/me-portfolio/issues/050520)
+* **phase-3/overlays:** add HTML content overlays for all three sections ([97dc7c1](https://github.com/hari-houdini/me-portfolio/commit/97dc7c1a7bb42488724c5e121b4d94b850cdec0b))
+* **section1/hero:** GSAP scroll-driven title animation — centred to editorial ([03f9b3a](https://github.com/hari-houdini/me-portfolio/commit/03f9b3a758521615eb8e69a779df169660192911))
+* **section3/warp:** replace city with cosmic neon warp tunnel ([afd1ff5](https://github.com/hari-houdini/me-portfolio/commit/afd1ff5bb08ff544da761f644f5651e0bd65b4a6)), closes [#9d00](https://github.com/hari-houdini/me-portfolio/issues/9d00) [#00f5](https://github.com/hari-houdini/me-portfolio/issues/00f5)
+
 # [1.2.0](https://github.com/hari-houdini/me-portfolio/compare/v1.1.0...v1.2.0) (2026-03-25)
 
 
