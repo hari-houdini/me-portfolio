@@ -7,7 +7,16 @@
 	},
 	"files": {
 		"ignoreUnknown": true,
-		"includes": ["**", "!**/*.css", "!coverage", "!build", "!cms", "!.github/"]
+		"includes": [
+			"**",
+			"!**/*.css",
+			"!coverage",
+			"!build",
+			"!.next",
+			"!.sst",
+			"!payload-types.ts",
+			"!.github/"
+		]
 	},
 	"formatter": {
 		"enabled": true,
