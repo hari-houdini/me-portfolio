@@ -1,9 +1,9 @@
 /**
- * glsl.d.ts — type declarations for GLSL shader imports
+ * glsl.d.ts
  *
- * vite-plugin-glsl transforms .glsl/.vert/.frag files into typed string
- * constants at build time. This declaration file tells TypeScript about
- * those module types so imports don't produce "Cannot find module" errors.
+ * Type declarations for GLSL shader file imports.
+ * raw-loader (configured in next.config.ts) transforms .glsl/.vert/.frag
+ * files into string constants at build time.
  */
 
 declare module "*.glsl" {
