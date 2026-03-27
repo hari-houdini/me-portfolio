@@ -34,6 +34,17 @@ const dirname = path.dirname(filename);
 
 const isProduction = process.env.NODE_ENV === "production";
 
+// Safely access SST v4 Resource values.
+// Returns undefined when SST links are not active (local `next dev`, CI builds).
+// In Lambda, SST injects resource bindings so Resource.* always resolves.
+function sst<T>(accessor: () => T): T | undefined {
+	try {
+		return accessor();
+	} catch {
+		return undefined;
+	}
+}
+
 export default buildConfig({
 	// Admin panel served at /admin via Next.js route group
 	admin: {
@@ -48,10 +59,12 @@ export default buildConfig({
 
 	db: postgresAdapter({
 		pool: {
-			// SST v4 Resource access pattern:
-			//   Local dev  → process.env.DATABASE_URL (from .env.local) wins via ??
-			//   Lambda     → Resource.DatabaseUrl.value (injected by SST link)
-			connectionString: process.env.DATABASE_URL ?? Resource.DatabaseUrl.value,
+			// SST v4 resource access:
+			//   local dev → process.env.DATABASE_URL from .env.local
+			//   Lambda    → Resource.DatabaseUrl.value from SST link
+			//   CI build  → undefined (build fails expectedly; keep `pnpm build` out of CI)
+			connectionString:
+				process.env.DATABASE_URL ?? sst(() => Resource.DatabaseUrl.value),
 		},
 	}),
 
@@ -64,7 +77,8 @@ export default buildConfig({
 							prefix: "media",
 						},
 					},
-					bucket: process.env.S3_BUCKET ?? Resource.MediaBucket.name,
+					bucket:
+						process.env.S3_BUCKET ?? sst(() => Resource.MediaBucket.name) ?? "",
 					config: {
 						region: process.env.S3_REGION ?? "us-east-1",
 						// In Lambda, IAM role provides credentials automatically.
@@ -74,7 +88,8 @@ export default buildConfig({
 			]
 		: [],
 
-	secret: process.env.PAYLOAD_SECRET ?? Resource.PayloadSecret.value,
+	secret:
+		process.env.PAYLOAD_SECRET ?? sst(() => Resource.PayloadSecret.value) ?? "",
 
 	serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000",
 
