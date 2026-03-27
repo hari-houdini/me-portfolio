@@ -62,7 +62,7 @@
 		"raw-loader": "^4.0.2",
 		"sst": "^4.5.11",
 		"typescript": "^5.9.3",
-		"vite-tsconfig-paths": "^5.1.4",
+		"vite-tsconfig-paths": "^6.1.1",
 		"vitest": "^4.1.0"
 	}
 }
