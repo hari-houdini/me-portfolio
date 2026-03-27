@@ -18,11 +18,14 @@
 
 import { useEffect, useRef } from "react";
 import type { SiteConfig } from "~/services/cms/mod";
+import { EncryptedText } from "~/shared/encrypted-text.client.component";
 
 export interface HeroOverlayProps {
 	siteConfig: SiteConfig;
 	/** Normalised scroll offset 0→1 from the canvas rAF loop */
 	scrollOffset?: number;
+	/** True when Section 1 is the active section — drives EncryptedText replay */
+	isSection1?: boolean;
 	/** Whether the intro animation has completed */
 	introComplete?: boolean;
 	/** Mobile fallback — renders in normal document flow */
@@ -32,6 +35,7 @@ export interface HeroOverlayProps {
 export function HeroOverlay({
 	siteConfig,
 	scrollOffset = 0,
+	isSection1 = true,
 	introComplete = true,
 	isMobile = false,
 }: HeroOverlayProps) {
@@ -100,11 +104,25 @@ export function HeroOverlay({
 					{name}
 				</h1>
 				<p className="mt-4 font-display text-xl sm:text-2xl font-light text-[var(--color-neon-cyan)]">
-					{tagline}
+					<EncryptedText
+						text={tagline}
+						active={isSection1}
+						revealDelayMs={60}
+						flipDelayMs={40}
+						encryptedClassName="text-[var(--color-text-subtle)]"
+						revealedClassName="text-[var(--color-neon-cyan)]"
+					/>
 				</p>
 				{subtitle && (
 					<p className="mt-2 font-sans text-base text-[var(--color-text-muted)]">
-						{subtitle}
+						<EncryptedText
+							text={subtitle}
+							active={isSection1}
+							revealDelayMs={55}
+							flipDelayMs={45}
+							encryptedClassName="text-[var(--color-text-subtle)]"
+							revealedClassName="text-[var(--color-text-muted)]"
+						/>
 					</p>
 				)}
 			</section>
@@ -139,11 +157,25 @@ export function HeroOverlay({
 					{name}
 				</h1>
 				<p className="mt-3 font-display text-lg sm:text-2xl lg:text-3xl font-light text-[var(--color-neon-cyan)]">
-					{tagline}
+					<EncryptedText
+						text={tagline}
+						active={isSection1}
+						revealDelayMs={60}
+						flipDelayMs={40}
+						encryptedClassName="text-[var(--color-text-subtle)]"
+						revealedClassName="text-[var(--color-neon-cyan)]"
+					/>
 				</p>
 				{subtitle && (
 					<p className="mt-1 font-sans text-sm text-[var(--color-text-muted)]">
-						{subtitle}
+						<EncryptedText
+							text={subtitle}
+							active={isSection1}
+							revealDelayMs={55}
+							flipDelayMs={45}
+							encryptedClassName="text-[var(--color-text-subtle)]"
+							revealedClassName="text-[var(--color-text-muted)]"
+						/>
 					</p>
 				)}
 			</section>

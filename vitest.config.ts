@@ -61,6 +61,8 @@ export default defineConfig({
 				"app/features/warp/warp-scene.client.component.tsx",
 				// Audio toggle uses browser APIs not available in full in Node
 				"app/features/audio/audio-toggle.client.component.tsx",
+				// Nav liquid-glass uses SVG filter + ResizeObserver — visual only
+				"app/features/nav/liquid-glass.client.component.tsx",
 				// Shared constants — trivially correct
 				"app/shared/theme.util.ts",
 			],

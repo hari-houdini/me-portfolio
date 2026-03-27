@@ -1,5 +1,5 @@
 /**
- * experience.tsx — root Three.js canvas and scene orchestrator
+ * experience.client.component.tsx — root Three.js canvas and scene orchestrator
  *
  * This is the single entry point for all 3D rendering. It:
  *  1. Renders a fixed-position <Canvas> that covers the viewport
@@ -9,12 +9,15 @@
  *     transitions between them are driven by scroll progress
  *  5. Applies the post-processing effect stack via <PostFx>
  *
+ * Scroll architecture:
+ *  ScrollControls creates a private internal <div> (scroll.el) that it scrolls
+ *  by setting scrollTop directly — it intercepts all wheel events on the canvas.
+ *  This element is surfaced to home.tsx via onScrollElement() so GSAP
+ *  ScrollTrigger can watch the correct scroller (not the page / window).
+ *
  * SSR safety:
  *  This file is imported via React.lazy() in home.tsx. The lazy boundary
- *  ensures Three.js never instantiates on the server. This file may safely
- *  import from three, @react-three/fiber, and @react-three/drei.
- *
- * Props are passed down from the home route loader (CMS data + scroll state).
+ *  ensures Three.js never instantiates on the server.
  */
 
 "use client";

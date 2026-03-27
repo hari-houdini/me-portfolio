@@ -19,6 +19,7 @@ import { AboutOverlay, extractText } from "~/features/about/mod";
 import { AudioToggle } from "~/features/audio/mod";
 import { ContactOverlay } from "~/features/contact/mod";
 import { HeroOverlay } from "~/features/hero/mod";
+import { SectionNav } from "~/features/nav/mod";
 import { WorkOverlay } from "~/features/work/mod";
 import type { PageData } from "~/services/cms/mod";
 import { CmsService } from "~/services/cms/mod";
@@ -113,14 +114,14 @@ export function meta({ data }: Route.MetaArgs) {
 
 /**
  * Section anchor scroll positions (0→1 of total scrollable height).
- * These must align with SECTION_OFFSETS in scroll-section.util.ts.
+ * Must align with SECTION_OFFSETS in scroll-section.util.ts.
  */
 const SNAP_ANCHORS = [0, 0.33, 0.66, 1] as const;
 
 /**
- * How much past a section boundary (in normalised offset units) the user
- * must scroll before the snap fires. Too low = snaps too eagerly;
- * too high = snap feels unresponsive. 0.12 = ~12% into the next section.
+ * How far past a section boundary the user must scroll before snap fires.
+ * 0.12 = 12% into the next section. Prevents accidental section changes
+ * from small scroll gestures while still feeling responsive.
  */
 const SNAP_THRESHOLD = 0.12;
 
@@ -150,6 +151,10 @@ function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 
 					gsap.registerPlugin(ScrollTrigger);
 
+					// normalizeScroll: normalise mouse wheel vs trackpad events so
+					// both deliver consistent velocity to the snap logic.
+					ScrollTrigger.normalizeScroll(true);
+
 					const trigger = ScrollTrigger.create({
 						trigger: scrollEl,
 						scroller: scrollEl,
@@ -168,19 +173,20 @@ function useScrollSnap(scrollEl: HTMLElement | null, enabled: boolean) {
 								return rawValue;
 							},
 							duration: { min: 0.3, max: 0.6 },
-							delay: 0.15,
+							delay: 0.25, // idle time before snap fires (up from 0.15)
 							ease: "power2.inOut",
 						},
 					});
 
 					cleanup = () => {
 						trigger.kill();
+						ScrollTrigger.normalizeScroll(false);
 						for (const t of ScrollTrigger.getAll()) t.kill();
 					};
 				}),
 			)
 			.catch(() => {
-				// GSAP failed to load — degrade gracefully (no snap, scroll still works)
+				// GSAP failed — degrade gracefully, scroll still works without snap
 			});
 
 		return () => {
@@ -198,13 +204,7 @@ function useIs3DCapable() {
 	const [capable, setCapable] = useState(false);
 
 	useEffect(() => {
-		// Run only on client after hydration
-		const isWide = window.innerWidth >= 1024;
-		const prefersReduced = window.matchMedia(
-			"(prefers-reduced-motion: reduce)",
-		).matches;
-
-		// Check WebGL2 support
+		// WebGL2 support is static — check once and cache the result.
 		let hasWebGL = false;
 		try {
 			const canvas = document.createElement("canvas");
@@ -213,7 +213,21 @@ function useIs3DCapable() {
 			hasWebGL = false;
 		}
 
-		setCapable(isWide && !prefersReduced && hasWebGL);
+		const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+		function evaluate() {
+			const isWide = window.innerWidth >= 1024;
+			setCapable(isWide && !motionQuery.matches && hasWebGL);
+		}
+
+		// Initial evaluation on mount.
+		evaluate();
+
+		// Re-evaluate whenever the OS accessibility setting changes mid-session
+		// (e.g. user toggles "Reduce Motion" in System Settings while browsing).
+		// This immediately unmounts the canvas and shows the static fallback.
+		motionQuery.addEventListener("change", evaluate);
+		return () => motionQuery.removeEventListener("change", evaluate);
 	}, []);
 
 	return capable;
@@ -245,6 +259,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	// misaligned with the snap anchors at 0.33/0.66.
 	const isSection2 = scrollOffset >= 0.33 && scrollOffset < 0.66;
 	const isSection3 = scrollOffset >= 0.66;
+	const isSection1 = !isSection2 && !isSection3;
+	// Numeric section index for SectionNav (0 = hero, 1 = about, 2 = work)
+	const section = isSection3 ? 2 : isSection2 ? 1 : 0;
 
 	// Enable GSAP snap only when drei's scroll element is available and 3D capable
 	useScrollSnap(snapEl, is3DCapable);
@@ -252,19 +269,49 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 	return (
 		<>
 			{/* ----------------------------------------------------------------
-			    Visually-hidden but screen-reader-accessible content.
-			    Always present regardless of 3D canvas support.
-			    ---------------------------------------------------------------- */}
+                Visually-hidden but screen-reader-accessible content.
+                Always present regardless of 3D canvas support. Provides the
+                full portfolio content to assistive technology independently of
+                the 3D canvas experience.
+                ---------------------------------------------------------------- */}
 			<div className="sr-only" aria-hidden="false">
 				<h1>{siteConfig.name}</h1>
 				<p>{siteConfig.tagline}</p>
+				{siteConfig.subtitle && <p>{siteConfig.subtitle}</p>}
+
+				<h2>{siteConfig.sectionTitles.about}</h2>
 				<p>{about.bio ? extractText(about.bio) : ""}</p>
-				<ul>
+				{about.skills.length > 0 && (
+					<ul aria-label="Skills and technologies">
+						{about.skills.map((skill) => (
+							<li key={skill}>{skill}</li>
+						))}
+					</ul>
+				)}
+
+				<h2>{siteConfig.sectionTitles.work}</h2>
+				<ul aria-label="Projects">
 					{projects.map((p) => (
-						<li key={p.id}>{p.title}</li>
+						<li key={p.id}>
+							<strong>{p.title}</strong>
+							{p.description ? ` — ${p.description}` : ""}
+							{p.year ? ` (${p.year})` : ""}
+						</li>
 					))}
 				</ul>
-				<p>{contact.email}</p>
+
+				<h2>{siteConfig.sectionTitles.contact}</h2>
+				<p>{contact.ctaText}</p>
+				<a href={`mailto:${contact.email}`}>{contact.email}</a>
+				{contact.socials.length > 0 && (
+					<ul aria-label="Social links">
+						{contact.socials.map((s) => (
+							<li key={s.platform}>
+								<a href={s.url}>{s.label}</a>
+							</li>
+						))}
+					</ul>
+				)}
 			</div>
 
 			{/* ----------------------------------------------------------------
@@ -295,6 +342,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 					<HeroOverlay
 						siteConfig={siteConfig}
 						scrollOffset={scrollOffset}
+						isSection1={isSection1}
 						introComplete
 						isMobile={false}
 					/>
@@ -332,8 +380,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 						/>
 					</div>
 
-					{/* Audio toggle — only visible in city section */}
-					{isSection3 && <AudioToggle />}
+					{/* Section navigation — liquid glass dots, fixed right side */}
+					<SectionNav
+						section={section as 0 | 1 | 2}
+						sectionTitles={siteConfig.sectionTitles}
+						scrollEl={snapEl}
+					/>
+
+					{/* Audio toggle — visible across all sections (prep for Tone.js) */}
+					<AudioToggle />
 				</div>
 			) : (
 				/* ----------------------------------------------------------------
