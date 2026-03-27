@@ -1,4 +1,4 @@
-# REWRITE-001: Architecture Rewrite — Next.js 16 + SST + Payload Embedded
+# REWRITE-001: Architecture Rewrite — Next.js 16 + SST v4 + Payload Embedded
 
 **Status:** In Progress
 **Author:** Hari Houdini
@@ -43,7 +43,7 @@ This split creates unnecessary friction:
 | Framework | React Router v7 | Next.js 16 (App Router) |
 | CMS | Standalone Payload CMS (separate Next.js app) | Payload v3 embedded in same Next.js app |
 | CMS data access | REST HTTP calls (Effect-ts `fetch`) | Payload Local API (`getPayload()`) |
-| Deployment | Cloudflare Workers (wrangler) | SST (OpenNext) → AWS Lambda@Edge + CloudFront |
+| Deployment | Cloudflare Workers (wrangler) | SST v4 (OpenNext, v4.5.11) → AWS Lambda@Edge + CloudFront |
 | Media uploads | Local `staticDir` | `@payloadcms/storage-s3` → S3 bucket via SST |
 | Database | Supabase PostgreSQL (same) | Supabase PostgreSQL (same — existing project) |
 | Env secrets | `.env` files / wrangler vars | Varlock SaaS (CLI pull → `.env.local`) |

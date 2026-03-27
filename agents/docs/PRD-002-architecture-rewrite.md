@@ -93,7 +93,7 @@ Vite is the right choice for a Vite-based React app. It is not the right bundler
 
 ### Vision
 
-Collapse the two-application split into a single Next.js 16 application with Payload CMS v3 embedded directly. The portfolio and its CMS run in the same process, share the same dependency tree, and communicate via the Payload Local API — a direct in-process function call with no network overhead. The entire application deploys to AWS via SST v3 (OpenNext), giving global distribution through CloudFront at zero additional operational cost within the AWS free tier.
+Collapse the two-application split into a single Next.js 16 application with Payload CMS v3 embedded directly. The portfolio and its CMS run in the same process, share the same dependency tree, and communicate via the Payload Local API — a direct in-process function call with no network overhead. The entire application deploys to AWS via SST v4 (OpenNext, v4.5.11), giving global distribution through CloudFront at zero additional operational cost within the AWS free tier.
 
 ### From the Portfolio Owner's Perspective
 
@@ -188,7 +188,7 @@ As the developer maintaining this codebase, the rewrite means:
 | **Next.js 16 (App Router)** | Portfolio framework | Full Node.js runtime compatibility (runs Payload). Server Components eliminate the need for a separate data-fetching layer. `generateMetadata` + `page.tsx` pattern replaces the React Router loader model cleanly. |
 | **Payload v3 (embedded)** | CMS | Running Payload in the same process removes the REST overhead and gives type-safe Local API access. `payload-types.ts` becomes the source of truth for all CMS data shapes. |
 | **Payload Local API** | CMS data access | `getPayload({ config })` is a direct function call. Zero network overhead. No HTTP client to configure. No fetch error handling for internal data — Payload throws, Effect catches. |
-| **SST v3 (OpenNext)** | Deployment | OpenNext wraps Next.js for Lambda@Edge + CloudFront. Infrastructure is defined in `sst.config.ts` as code. S3 bucket and Secrets are provisioned automatically alongside the app. Fully within the AWS free tier. |
+| **SST v4 (OpenNext, v4.5.11)** | Deployment | OpenNext wraps Next.js for Lambda@Edge + CloudFront. Infrastructure is defined in `sst.config.ts` as code. Resources are wired via `link`; app code accesses them via `import { Resource } from "sst"`. S3 bucket and Secrets are provisioned automatically. Fully within the AWS free tier. |
 | **`@payloadcms/storage-s3`** | Media uploads | Replaces local `staticDir` in production. S3 bucket is provisioned by SST. Conditional config: local storage in `NODE_ENV === 'development'`, S3 plugin in production. |
 | **Supabase PostgreSQL** | Database | Unchanged from the current setup. `?pgBouncer=true` appended to `DATABASE_URL` for Lambda transaction pooling (avoids exhausting Supabase free tier's 30-connection limit). |
 | **Varlock SaaS** | Secret management | `varlock pull --env development > .env.local` provides a single-command local environment setup. In production, Varlock injects secrets at deploy time via the CI/CD pipeline. |
