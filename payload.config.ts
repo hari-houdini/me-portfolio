@@ -21,6 +21,7 @@ import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
+import { Resource } from "sst";
 import { Media } from "./collections/media.collection";
 import { Projects } from "./collections/projects.collection";
 import { Users } from "./collections/users.collection";
@@ -47,7 +48,10 @@ export default buildConfig({
 
 	db: postgresAdapter({
 		pool: {
-			connectionString: process.env.DATABASE_URL,
+			// SST v4 Resource access pattern:
+			//   Local dev  → process.env.DATABASE_URL (from .env.local) wins via ??
+			//   Lambda     → Resource.DatabaseUrl.value (injected by SST link)
+			connectionString: process.env.DATABASE_URL ?? Resource.DatabaseUrl.value,
 		},
 	}),
 
@@ -60,7 +64,7 @@ export default buildConfig({
 							prefix: "media",
 						},
 					},
-					bucket: process.env.S3_BUCKET ?? "",
+					bucket: process.env.S3_BUCKET ?? Resource.MediaBucket.name,
 					config: {
 						region: process.env.S3_REGION ?? "us-east-1",
 						// In Lambda, IAM role provides credentials automatically.
@@ -70,7 +74,7 @@ export default buildConfig({
 			]
 		: [],
 
-	secret: process.env.PAYLOAD_SECRET ?? "",
+	secret: process.env.PAYLOAD_SECRET ?? Resource.PayloadSecret.value,
 
 	serverURL: process.env.NEXT_PUBLIC_SERVER_URL ?? "http://localhost:3000",
 

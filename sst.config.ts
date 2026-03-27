@@ -3,12 +3,22 @@
 /**
  * sst.config.ts
  *
- * SST v3 Ion configuration — OpenNext + AWS Lambda@Edge + CloudFront.
+ * SST v4 (OpenNext) — AWS Lambda@Edge + CloudFront + S3.
  *
  * Resources provisioned:
- *  - S3 Bucket (MediaBucket) — stores Payload CMS media uploads
- *  - Secrets — DATABASE_URL, PAYLOAD_SECRET, NEXT_PUBLIC_SERVER_URL (managed via SST / Varlock)
- *  - Next.js app — deployed via OpenNext to Lambda@Edge + CloudFront (us-east-1)
+ *  - sst.aws.Bucket  (MediaBucket) — Payload CMS media uploads
+ *  - sst.Secret      (DatabaseUrl) — Supabase PostgreSQL connection string
+ *  - sst.Secret      (PayloadSecret) — Payload JWT signing secret
+ *  - sst.Secret      (ServerUrl) — public server URL (CloudFront domain)
+ *  - sst.aws.Nextjs  (Portfolio) — Next.js app via OpenNext
+ *
+ * Resource access pattern (SST v4):
+ *  - `link` grants Lambda IAM access and makes resources available via
+ *    `import { Resource } from "sst"` in server-side code.
+ *  - App code uses: `process.env.VAR ?? Resource.Name.value`
+ *    → local dev: process.env wins (from .env.local), Resource never evaluated
+ *    → Lambda:    process.env is unset, Resource.* provides the value
+ *  - NEXT_PUBLIC_* vars must stay in `environment` (exposed to the browser).
  *
  * Secrets workflow:
  *  - Set once:  pnpm sst secret set DatabaseUrl "postgresql://..."
@@ -42,14 +52,16 @@ export default $config({
 		const serverUrl = new sst.Secret("ServerUrl");
 
 		new sst.aws.Nextjs("Portfolio", {
-			// Link grants the Lambda function read access to these resources
+			// `link` grants Lambda IAM access to each resource and makes them
+			// available via `import { Resource } from "sst"` in server code.
+			// See sst-env.d.ts for TypeScript types. See payload.config.ts for usage.
 			link: [mediaBucket, dbUrl, payloadSecret, serverUrl],
 			environment: {
-				S3_BUCKET: mediaBucket.name,
-				S3_REGION: "us-east-1",
-				DATABASE_URL: dbUrl.value,
-				PAYLOAD_SECRET: payloadSecret.value,
+				// Static values and NEXT_PUBLIC_* vars that cannot use Resource.*:
+				// NEXT_PUBLIC_* must be process.env (exposed to browser by Next.js).
+				// S3_REGION is a static string — not a linked resource.
 				NEXT_PUBLIC_SERVER_URL: serverUrl.value,
+				S3_REGION: "us-east-1",
 			},
 		});
 	},
