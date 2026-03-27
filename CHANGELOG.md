@@ -1,3 +1,17 @@
+# [1.4.0](https://github.com/hari-houdini/me-portfolio/compare/v1.3.0...v1.4.0) (2026-03-27)
+
+
+### Bug Fixes
+
+* **ci:** guard SST Resource access and rewrite bundle-size for Next.js ([d737991](https://github.com/hari-houdini/me-portfolio/commit/d737991a73f13089ae94a322a83aab7661a490f5))
+* **ci:** pass vitest when no test files exist in Phase 1 ([ed3e9ee](https://github.com/hari-houdini/me-portfolio/commit/ed3e9eef67b630b0408ac8603baba0dbbcb73716))
+
+
+### Features
+
+* **rewrite:** Phase 1 — Next.js 16 + Payload embedded + SST v3 foundation ([822bdbf](https://github.com/hari-houdini/me-portfolio/commit/822bdbfb7e45c32ba5ef878e9ee1cc1c466089ca))
+* **sst:** upgrade to SST v4 with Resource.* best practices ([b208a06](https://github.com/hari-houdini/me-portfolio/commit/b208a06c109f9956174f1988338e27fb1212700f))
+
 # [1.3.0](https://github.com/hari-houdini/me-portfolio/compare/v1.2.0...v1.3.0) (2026-03-26)
 
 
