@@ -22,7 +22,9 @@
 		"deploy": "sst deploy --stage production",
 		"deploy:preview": "sst deploy --stage preview",
 		"payload:generate-types": "payload generate:types",
-		"payload:migrate": "payload migrate"
+		"payload:migrate": "payload migrate",
+		"payload:migrate:create": "payload migrate:create",
+		"payload:migrate:fresh": "payload migrate:fresh"
 	},
 	"dependencies": {
 		"@gsap/react": "^2.1.2",

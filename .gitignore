@@ -1,6 +1,7 @@
 # ─── Dependencies ─────────────────────────────────────────────────────────────
 # No leading slash — matches node_modules/ at any depth (root, cms/, sub-packages)
 node_modules/
+.next/
 
 # ─── Environment & secrets ────────────────────────────────────────────────────
 .env
