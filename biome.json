@@ -15,6 +15,7 @@
 			"!.next",
 			"!.sst",
 			"!payload-types.ts",
+			"!migrations",
 			"!.github/"
 		]
 	},
