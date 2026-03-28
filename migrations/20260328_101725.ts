@@ -1,7 +1,11 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import {
+	type MigrateDownArgs,
+	type MigrateUpArgs,
+	sql,
+} from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
-  await db.execute(sql`
+	await db.execute(sql`
    CREATE TYPE "public"."enum_projects_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_contact_socials_platform" AS ENUM('github', 'linkedin', 'twitter', 'instagram', 'dribbble', 'behance', 'other');
   CREATE TABLE "users_sessions" (
@@ -223,11 +227,15 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "about_skills_parent_id_idx" ON "about_skills" USING btree ("_parent_id");
   CREATE INDEX "about_photo_idx" ON "about" USING btree ("photo_id");
   CREATE INDEX "contact_socials_order_idx" ON "contact_socials" USING btree ("_order");
-  CREATE INDEX "contact_socials_parent_id_idx" ON "contact_socials" USING btree ("_parent_id");`)
+  CREATE INDEX "contact_socials_parent_id_idx" ON "contact_socials" USING btree ("_parent_id");`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
-  await db.execute(sql`
+export async function down({
+	db,
+	payload,
+	req,
+}: MigrateDownArgs): Promise<void> {
+	await db.execute(sql`
    DROP TABLE "users_sessions" CASCADE;
   DROP TABLE "users" CASCADE;
   DROP TABLE "media" CASCADE;
@@ -245,5 +253,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "contact_socials" CASCADE;
   DROP TABLE "contact" CASCADE;
   DROP TYPE "public"."enum_projects_status";
-  DROP TYPE "public"."enum_contact_socials_platform";`)
+  DROP TYPE "public"."enum_contact_socials_platform";`);
 }
