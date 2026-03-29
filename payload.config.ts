@@ -21,6 +21,7 @@ import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { s3Storage } from "@payloadcms/storage-s3";
 import { buildConfig } from "payload";
+import sharp from "sharp";
 import { Resource } from "sst";
 import { Media } from "./collections/media.collection";
 import { Projects } from "./collections/projects.collection";
@@ -67,6 +68,8 @@ export default buildConfig({
 				process.env.DATABASE_URL ?? sst(() => Resource.DatabaseUrl.value),
 		},
 	}),
+
+	sharp,
 
 	// S3 in production, local filesystem in development
 	plugins: isProduction
