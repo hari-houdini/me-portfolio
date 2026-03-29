@@ -16,6 +16,7 @@
 			"!.sst",
 			"!payload-types.ts",
 			"!migrations",
+			"!**/importMap.js",
 			"!.github/"
 		]
 	},
