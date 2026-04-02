@@ -499,9 +499,9 @@ export interface SiteConfig {
     work?: string | null;
     contact?: string | null;
   };
-  seo?: {
-    metaTitle?: string | null;
-    metaDescription?: string | null;
+  seo: {
+    metaTitle: string;
+    metaDescription: string;
     /**
      * Open Graph image shown when sharing on social media. Recommended: 1200×630.
      */

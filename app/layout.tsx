@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+// Baseline metadata — overridden per-page via generateMetadata in each route.
 export const metadata: Metadata = {
 	title: "Hari Houdini — Creative Technologist",
 	description:

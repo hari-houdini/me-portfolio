@@ -86,11 +86,13 @@ export const SiteConfig: GlobalConfig = {
 				{
 					name: "metaTitle",
 					type: "text",
+					required: true,
 					defaultValue: "Hari Houdini — Creative Technologist",
 				},
 				{
 					name: "metaDescription",
 					type: "textarea",
+					required: true,
 					defaultValue:
 						"Portfolio of Hari Houdini — immersive 3D experiences built at the intersection of art and engineering.",
 				},
