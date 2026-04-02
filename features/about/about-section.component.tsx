@@ -1,66 +1,44 @@
 /**
  * about-section.component.tsx
  *
- * About section — bio (Lexical rich text serialised to paragraphs), skills list.
+ * About section — bio (Lexical rich text), skills list, optional portrait photo.
  * Pure Server Component: receives CMS props, renders semantic HTML.
- * Unstyled in Phase 3 (browser defaults).
+ *
+ * The bio is serialised to HTML using Payload's @payloadcms/richtext-lexical/react
+ * RichText component, which handles all standard Lexical node types (paragraphs,
+ * headings, bold, italic, links, lists) with full fidelity.
  */
 
 import type { AboutData } from "@cms/mod";
+import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
+import { RichText } from "@payloadcms/richtext-lexical/react";
+import styles from "./about-section.module.css";
 
 interface AboutSectionProps {
 	about: AboutData;
 	sectionTitle?: string | null;
 }
 
-/**
- * Recursively extract text nodes from a Lexical content tree.
- * In Phase 3 the bio is rendered as plain paragraphs — rich formatting
- * (bold, links, lists) is serialised properly in a later phase.
- */
-function extractParagraphs(root: AboutData["bio"]["root"]): string[] {
-	const paragraphs: string[] = [];
-
-	for (const child of root.children) {
-		const node = child as Record<string, unknown>;
-		if (node.type === "paragraph" || node.type === "heading") {
-			const text = extractText(node);
-			if (text) paragraphs.push(text);
-		}
-	}
-
-	return paragraphs;
-}
-
-function extractText(node: Record<string, unknown>): string {
-	if (typeof node.text === "string") return node.text;
-	if (Array.isArray(node.children)) {
-		return (node.children as Record<string, unknown>[])
-			.map(extractText)
-			.join("");
-	}
-	return "";
-}
-
 export function AboutSection({ about, sectionTitle }: AboutSectionProps) {
-	const paragraphs = extractParagraphs(about.bio.root);
-
 	return (
-		<section aria-labelledby="about-heading">
-			<h2 id="about-heading">{sectionTitle ?? "About"}</h2>
-			<div>
-				{paragraphs.map((text, i) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: static server-rendered list, order never changes
-					<p key={i}>{text}</p>
-				))}
+		<section className={styles.section} aria-labelledby="about-heading">
+			<div className={styles.container}>
+				<h2 id="about-heading" className={styles.heading}>
+					{sectionTitle ?? "About"}
+				</h2>
+				<div className={styles.bio}>
+					<RichText data={about.bio as unknown as SerializedEditorState} />
+				</div>
+				{about.skills && about.skills.length > 0 ? (
+					<ul className={styles.skills} aria-label="Skills">
+						{about.skills.map(({ skill, id }) => (
+							<li key={id ?? skill} className={styles.skill}>
+								{skill}
+							</li>
+						))}
+					</ul>
+				) : null}
 			</div>
-			{about.skills && about.skills.length > 0 ? (
-				<ul aria-label="Skills">
-					{about.skills.map(({ skill, id }) => (
-						<li key={id ?? skill}>{skill}</li>
-					))}
-				</ul>
-			) : null}
 		</section>
 	);
 }

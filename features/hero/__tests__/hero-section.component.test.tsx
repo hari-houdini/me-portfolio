@@ -1,7 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mockSiteConfig } from "../../test/fixtures/cms.fixtures";
 import { HeroSection } from "../hero-section.component";
+
+vi.mock("../hero-section.module.css", () => ({ default: {} }));
 
 describe("HeroSection", () => {
 	it("renders name as h1", () => {

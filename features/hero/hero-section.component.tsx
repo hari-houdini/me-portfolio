@@ -3,24 +3,25 @@
  *
  * Hero section — name, tagline, optional subtitle.
  * Pure Server Component: receives CMS props, renders semantic HTML.
- * Unstyled in Phase 3 (browser defaults).
  */
 
 import type { SiteConfigData } from "@cms/mod";
+import styles from "./hero-section.module.css";
 
 interface HeroSectionProps {
 	siteConfig: SiteConfigData;
 }
 
 export function HeroSection({ siteConfig }: HeroSectionProps) {
-	const { name, tagline, subtitle, sectionTitles } = siteConfig;
+	const { name, tagline, subtitle } = siteConfig;
 
 	return (
-		<section aria-labelledby="hero-heading">
-			<h1 id="hero-heading">{name}</h1>
-			<p>{tagline}</p>
-			{subtitle ? <p>{subtitle}</p> : null}
-			{sectionTitles?.hero ? <p>{sectionTitles.hero}</p> : null}
+		<section className={styles.section} aria-labelledby="hero-heading">
+			<h1 id="hero-heading" className={styles.heading}>
+				{name}
+			</h1>
+			<p className={styles.tagline}>{tagline}</p>
+			{subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
 		</section>
 	);
 }

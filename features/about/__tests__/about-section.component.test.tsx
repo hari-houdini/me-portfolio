@@ -1,8 +1,20 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { AboutData } from "../../cms/cms.schema";
 import { mockAbout } from "../../test/fixtures/cms.fixtures";
 import { AboutSection } from "../about-section.component";
+
+// @payloadcms/richtext-lexical/react requires a full Payload + browser environment.
+// Replace with a minimal stub so unit tests focus on component logic, not the
+// serialiser internals.
+vi.mock("@payloadcms/richtext-lexical/react", () => ({
+	RichText: ({ data }: { data: unknown }) => (
+		<div data-testid="rich-text" data-lexical={JSON.stringify(data)} />
+	),
+}));
+
+// CSS Modules are identity-mapped in the jsdom test environment (className === key).
+vi.mock("../about-section.module.css", () => ({ default: {} }));
 
 describe("AboutSection", () => {
 	it("renders section heading", () => {
@@ -19,17 +31,14 @@ describe("AboutSection", () => {
 		);
 	});
 
-	it("renders bio paragraph text", () => {
+	it("renders RichText component with bio data", () => {
 		render(<AboutSection about={mockAbout} />);
-		expect(
-			screen.getByText("I build immersive digital experiences."),
-		).toBeInTheDocument();
+		expect(screen.getByTestId("rich-text")).toBeInTheDocument();
 	});
 
 	it("renders skills list", () => {
 		render(<AboutSection about={mockAbout} />);
-		const list = screen.getByRole("list", { name: "Skills" });
-		expect(list).toBeInTheDocument();
+		expect(screen.getByRole("list", { name: "Skills" })).toBeInTheDocument();
 	});
 
 	it("renders each skill", () => {
@@ -55,7 +64,7 @@ describe("AboutSection", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("renders empty bio without crashing", () => {
+	it("renders without crashing when bio has no children", () => {
 		const emptyBio: AboutData = {
 			...mockAbout,
 			bio: {
@@ -71,5 +80,6 @@ describe("AboutSection", () => {
 		};
 		render(<AboutSection about={emptyBio} />);
 		expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
+		expect(screen.getByTestId("rich-text")).toBeInTheDocument();
 	});
 });

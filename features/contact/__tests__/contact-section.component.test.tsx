@@ -1,8 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ContactData } from "../../cms/cms.schema";
 import { mockContact } from "../../test/fixtures/cms.fixtures";
 import { ContactSection } from "../contact-section.component";
+
+vi.mock("../contact-section.module.css", () => ({ default: {} }));
 
 describe("ContactSection", () => {
 	it("renders section heading", () => {

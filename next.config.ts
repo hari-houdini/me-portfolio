@@ -7,6 +7,18 @@ const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
 const nextConfig: NextConfig = {
+	images: {
+		remotePatterns: [
+			// Local Payload media (development)
+			{ protocol: "http", hostname: "localhost" },
+			// AWS S3 (production — SST-provisioned bucket)
+			{ protocol: "https", hostname: "*.amazonaws.com" },
+			// CloudFront CDN (production — SST-provisioned distribution)
+			{ protocol: "https", hostname: "*.cloudfront.net" },
+		],
+	},
+
+	// webpack rule: handles .glsl/.vert/.frag for production builds (next build always uses webpack).
 	webpack: (config) => {
 		config.module.rules.push({
 			test: /\.(glsl|vert|frag)$/,

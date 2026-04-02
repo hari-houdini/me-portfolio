@@ -89,13 +89,11 @@ export const SiteConfigSchema = z.object({
 			contact: z.string().nullable().optional(),
 		})
 		.optional(),
-	seo: z
-		.object({
-			metaTitle: z.string().nullable().optional(),
-			metaDescription: z.string().nullable().optional(),
-			ogImage: MediaOrIdSchema.nullable().optional(),
-		})
-		.optional(),
+	seo: z.object({
+		metaTitle: z.string(),
+		metaDescription: z.string(),
+		ogImage: MediaOrIdSchema.nullable().optional(),
+	}),
 	updatedAt: z.string().nullable().optional(),
 	createdAt: z.string().nullable().optional(),
 });

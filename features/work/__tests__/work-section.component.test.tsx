@@ -1,10 +1,26 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
 	mockFeaturedProject,
 	mockProject,
 } from "../../test/fixtures/cms.fixtures";
 import { WorkSection } from "../work-section.component";
+
+vi.mock("../work-section.module.css", () => ({ default: {} }));
+function MockImage({
+	src,
+	alt,
+	...rest
+}: {
+	src: string;
+	alt: string;
+	[k: string]: unknown;
+}) {
+	// biome-ignore lint/performance/noImgElement: test-only stub replacing next/image
+	return <img src={src} alt={alt} {...(rest as object)} />;
+}
+
+vi.mock("next/image", () => ({ default: MockImage }));
 
 describe("WorkSection", () => {
 	it("renders section heading", () => {

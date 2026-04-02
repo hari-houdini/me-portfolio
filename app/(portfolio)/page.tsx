@@ -89,10 +89,8 @@ const getPageData = cache(() =>
 export async function generateMetadata(): Promise<Metadata> {
 	const { siteConfig } = await getPageData();
 	return {
-		title: siteConfig.seo?.metaTitle ?? "Hari Houdini — Creative Technologist",
-		description:
-			siteConfig.seo?.metaDescription ??
-			"Portfolio of Hari Houdini — immersive 3D experiences built at the intersection of art and engineering.",
+		title: siteConfig.seo.metaTitle,
+		description: siteConfig.seo.metaDescription,
 	};
 }
 

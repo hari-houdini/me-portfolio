@@ -1,8 +1,25 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { ProjectData } from "../../cms/cms.schema";
 import { mockProject } from "../../test/fixtures/cms.fixtures";
 import { ProjectCard } from "../project-card.component";
+
+function MockImage({
+	src,
+	alt,
+	...rest
+}: {
+	src: string;
+	alt: string;
+	[k: string]: unknown;
+}) {
+	// biome-ignore lint/performance/noImgElement: test-only stub replacing next/image
+	return <img src={src} alt={alt} {...(rest as object)} />;
+}
+
+vi.mock("next/image", () => ({ default: MockImage }));
+
+vi.mock("../work-section.module.css", () => ({ default: {} }));
 
 describe("ProjectCard", () => {
 	it("renders project title as heading", () => {
@@ -95,5 +112,28 @@ describe("ProjectCard", () => {
 		expect(
 			screen.queryByRole("link", { name: /github repository/i }),
 		).not.toBeInTheDocument();
+	});
+
+	it("renders thumbnail image when MediaObject with url is provided", () => {
+		const withThumbnail: ProjectData = {
+			...mockProject,
+			thumbnail: {
+				id: 1,
+				url: "https://example.com/thumb.jpg",
+				alt: "Project screenshot",
+				width: 400,
+				height: 300,
+			},
+		};
+		render(<ProjectCard project={withThumbnail} />);
+		const img = screen.getByRole("img", { name: "Project screenshot" });
+		expect(img).toBeInTheDocument();
+		expect(img).toHaveAttribute("src", "https://example.com/thumb.jpg");
+	});
+
+	it("does not render thumbnail when thumbnail is null", () => {
+		const noThumb: ProjectData = { ...mockProject, thumbnail: null };
+		render(<ProjectCard project={noThumb} />);
+		expect(screen.queryByRole("img")).not.toBeInTheDocument();
 	});
 });

@@ -1,42 +1,90 @@
 /**
  * project-card.component.tsx
  *
- * Individual project card — title, description, tags, year, links, featured badge.
- * Pure Server Component. Unstyled in Phase 3 (browser defaults).
+ * Individual project card — thumbnail, title, year, description, tags, links.
+ * Pure Server Component. Renders the thumbnail via next/image when a URL is
+ * available from the Payload Media relation.
  */
 
-import type { ProjectData } from "@cms/mod";
+import type { MediaObject, ProjectData } from "@cms/mod";
+import Image from "next/image";
+import styles from "./work-section.module.css";
 
 interface ProjectCardProps {
 	project: ProjectData;
 }
 
+function isMediumObject(value: unknown): value is MediaObject {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"url" in value &&
+		typeof (value as MediaObject).url === "string"
+	);
+}
+
 export function ProjectCard({ project }: ProjectCardProps) {
-	const { title, description, tags, year, url, github, featured } = project;
+	const { title, description, tags, year, url, github, featured, thumbnail } =
+		project;
+
+	const media = isMediumObject(thumbnail) ? thumbnail : null;
 
 	return (
-		<article aria-label={title}>
-			{featured ? <span>Featured</span> : null}
-			<h3>{title}</h3>
-			{year ? <p>{year}</p> : null}
-			<p>{description}</p>
-			{tags && tags.length > 0 ? (
-				<ul aria-label="Technologies">
-					{tags.map(({ tag, id }) => (
-						<li key={id ?? tag}>{tag}</li>
-					))}
-				</ul>
+		<article className={styles.card} aria-label={title}>
+			{media?.url ? (
+				<div className={styles.cardImage}>
+					<Image
+						src={media.url}
+						alt={media.alt ?? title}
+						width={media.width ?? 400}
+						height={media.height ?? 300}
+						className={styles.thumbnail}
+					/>
+				</div>
 			) : null}
-			{url ? (
-				<a href={url} aria-label={`${title} — live site`}>
-					Live
-				</a>
-			) : null}
-			{github ? (
-				<a href={github} aria-label={`${title} — GitHub repository`}>
-					GitHub
-				</a>
-			) : null}
+			<div className={styles.cardBody}>
+				{featured ? (
+					<span className={styles.featuredBadge}>Featured</span>
+				) : null}
+				<h3 className={styles.cardTitle}>{title}</h3>
+				{year ? (
+					<time className={styles.cardYear} dateTime={String(year)}>
+						{year}
+					</time>
+				) : null}
+				<p className={styles.cardDescription}>{description}</p>
+				{tags && tags.length > 0 ? (
+					<ul className={styles.tagList} aria-label="Technologies">
+						{tags.map(({ tag, id }) => (
+							<li key={id ?? tag} className={styles.tag}>
+								{tag}
+							</li>
+						))}
+					</ul>
+				) : null}
+				<div className={styles.cardLinks}>
+					{url ? (
+						<a
+							href={url}
+							aria-label={`${title} — live site`}
+							className={styles.cardLink}
+							rel="noopener noreferrer"
+						>
+							Live
+						</a>
+					) : null}
+					{github ? (
+						<a
+							href={github}
+							aria-label={`${title} — GitHub repository`}
+							className={styles.cardLink}
+							rel="noopener noreferrer"
+						>
+							GitHub
+						</a>
+					) : null}
+				</div>
+			</div>
 		</article>
 	);
 }
