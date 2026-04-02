@@ -1,3 +1,11 @@
+# [1.6.0](https://github.com/hari-houdini/me-portfolio/compare/v1.5.0...v1.6.0) (2026-04-02)
+
+
+### Features
+
+* **portfolio:** Phase 3 — accessible HTML shell with full CMS pipeline ([38bc39e](https://github.com/hari-houdini/me-portfolio/commit/38bc39ec7551cd1d4522f2615c74d7e83418d87c))
+* **portfolio:** Phase 3 — accessible HTML shell with Server Components ([0d47d17](https://github.com/hari-houdini/me-portfolio/commit/0d47d176af89da9e5e57cb5b0e3024ee3a10c810))
+
 # [1.5.0](https://github.com/hari-houdini/me-portfolio/compare/v1.4.0...v1.5.0) (2026-04-02)
 
 
