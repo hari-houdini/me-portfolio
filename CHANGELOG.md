@@ -1,3 +1,16 @@
+# [1.5.0](https://github.com/hari-houdini/me-portfolio/compare/v1.4.0...v1.5.0) (2026-04-02)
+
+
+### Bug Fixes
+
+* **ci:** exclude auto-generated migrations/ from Biome lint ([72964d9](https://github.com/hari-houdini/me-portfolio/commit/72964d9d7a8be3bab7436277201abdb7abaa43e9))
+* **cms:** stabilise Payload v3 dev setup — proper route structure and HMR fix ([230ad5f](https://github.com/hari-houdini/me-portfolio/commit/230ad5f091bb70533094d33a19449ecfcd381832))
+
+
+### Features
+
+* **cms:** add CMS service layer — Phase 2 ([cf23a71](https://github.com/hari-houdini/me-portfolio/commit/cf23a7126785f5f9e47d44be601b3ba59002e92a))
+
 # [1.4.0](https://github.com/hari-houdini/me-portfolio/compare/v1.3.0...v1.4.0) (2026-03-27)
 
 
