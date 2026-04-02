@@ -11,14 +11,5 @@ export default function RootLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return (
-		// suppressHydrationWarning: Payload admin panel runs JS before hydration to
-		// determine theme / user state, producing attribute mismatches on <html> and
-		// <body> between the server render and the first client paint. This prop tells
-		// React to ignore one level of attribute differences on these two elements only
-		// — it does NOT suppress child component mismatches.
-		<html lang="en" suppressHydrationWarning>
-			<body suppressHydrationWarning>{children}</body>
-		</html>
-	);
+	return <>{children}</>;
 }
