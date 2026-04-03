@@ -12,7 +12,17 @@
 import type { AboutData } from "@cms/mod";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { RichText } from "@payloadcms/richtext-lexical/react";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import styles from "./about-section.module.css";
+
+const SectionBackground = dynamic(
+	() =>
+		import("@features/ui/backgrounds/section-background.client.component").then(
+			(m) => ({ default: m.SectionBackground }),
+		),
+	{ ssr: false },
+);
 
 interface AboutSectionProps {
 	about: AboutData;
@@ -20,12 +30,19 @@ interface AboutSectionProps {
 }
 
 export function AboutSection({ about, sectionTitle }: AboutSectionProps) {
+	const background = about.aboutStyle?.background;
+
 	return (
 		<section
 			id="about"
 			className={styles.section}
 			aria-labelledby="about-heading"
 		>
+			{background && background !== "none" ? (
+				<Suspense fallback={null}>
+					<SectionBackground variant={background} />
+				</Suspense>
+			) : null}
 			<div className={styles.container}>
 				<h2 id="about-heading" className={styles.heading}>
 					{sectionTitle ?? "About"}

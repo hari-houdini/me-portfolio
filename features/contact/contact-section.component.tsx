@@ -6,7 +6,17 @@
  */
 
 import type { ContactData } from "@cms/mod";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import styles from "./contact-section.module.css";
+
+const SectionBackground = dynamic(
+	() =>
+		import("@features/ui/backgrounds/section-background.client.component").then(
+			(m) => ({ default: m.SectionBackground }),
+		),
+	{ ssr: false },
+);
 
 interface ContactSectionProps {
 	contact: ContactData;
@@ -15,6 +25,7 @@ interface ContactSectionProps {
 
 export function ContactSection({ contact, sectionTitle }: ContactSectionProps) {
 	const { email, ctaText, socials } = contact;
+	const background = contact.contactStyle?.background;
 
 	return (
 		<section
@@ -22,6 +33,11 @@ export function ContactSection({ contact, sectionTitle }: ContactSectionProps) {
 			className={styles.section}
 			aria-labelledby="contact-heading"
 		>
+			{background && background !== "none" ? (
+				<Suspense fallback={null}>
+					<SectionBackground variant={background} />
+				</Suspense>
+			) : null}
 			<div className={styles.container}>
 				<h2 id="contact-heading" className={styles.heading}>
 					{sectionTitle ?? "Contact"}

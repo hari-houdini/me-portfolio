@@ -113,7 +113,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
 	const data = await getPageData();
-	const { siteConfig, about, contact, projects, recentPosts } = data;
+	const { siteConfig, about, contact, projects, recentPosts, workConfig } =
+		data;
 
 	return (
 		<>
@@ -128,6 +129,7 @@ export default async function HomePage() {
 				<WorkSection
 					projects={projects}
 					sectionTitle={siteConfig.sectionTitles?.work}
+					workConfig={workConfig}
 				/>
 				<ContactSection
 					contact={contact}
