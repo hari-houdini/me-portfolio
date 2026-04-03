@@ -10,6 +10,7 @@
 
 import type { GlobalConfig } from "payload";
 import { isAdmin } from "../access/is-admin.access";
+import { BACKGROUND_OPTIONS, TITLE_EFFECT_OPTIONS } from "./style-options";
 
 export const Contact: GlobalConfig = {
 	slug: "contact",
@@ -76,6 +77,35 @@ export const Contact: GlobalConfig = {
 					required: true,
 					admin: {
 						description: 'Accessible text for the link e.g. "GitHub profile".',
+					},
+				},
+			],
+		},
+		// ---- Contact style ----------------------------------------------
+		{
+			name: "contactStyle",
+			type: "group",
+			label: "Contact Style",
+			fields: [
+				{
+					name: "background",
+					type: "select",
+					label: "Section Background",
+					options: BACKGROUND_OPTIONS,
+					defaultValue: "none",
+					admin: {
+						description:
+							"Animated background rendered behind the Contact section.",
+					},
+				},
+				{
+					name: "titleEffect",
+					type: "select",
+					label: "Heading Effect",
+					options: TITLE_EFFECT_OPTIONS,
+					defaultValue: "none",
+					admin: {
+						description: "Animation effect applied to the Contact heading.",
 					},
 				},
 			],

@@ -117,6 +117,18 @@ export const Posts: CollectionConfig = {
 				position: "sidebar",
 			},
 		},
+		// ---- Reading experience --------------------------------------------
+		{
+			name: "tracingBeam",
+			type: "checkbox",
+			label: "Tracing Beam",
+			defaultValue: true,
+			admin: {
+				description:
+					"Show a tracing beam on the left edge of this post as the reader scrolls. Disable for very short posts.",
+				position: "sidebar",
+			},
+		},
 		// ---- SEO (optional — fall back to title + excerpt) ------------------
 		{
 			name: "metaTitle",

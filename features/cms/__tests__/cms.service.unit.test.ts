@@ -26,6 +26,16 @@ const blogStubs = {
 	getAllTagSlugs: () => Effect.succeed([] as string[]),
 	getTagBySlug: () =>
 		Effect.fail(new CmsNetworkError({ message: "not implemented in test" })),
+	getUIConfig: () => Effect.succeed({ id: 0, worldMapLocations: [] }),
+	getWorkConfig: () =>
+		Effect.succeed({
+			id: 0,
+			workStyle: {
+				background: "none",
+				titleEffect: "none",
+				projectCardStyle: "glow",
+			},
+		}),
 } as const;
 
 // ---------------------------------------------------------------------------

@@ -10,6 +10,7 @@
 
 import type { GlobalConfig } from "payload";
 import { isAdmin } from "../access/is-admin.access";
+import { BACKGROUND_OPTIONS, TITLE_EFFECT_OPTIONS } from "./style-options";
 
 export const SiteConfig: GlobalConfig = {
 	slug: "site-config",
@@ -74,6 +75,35 @@ export const SiteConfig: GlobalConfig = {
 					name: "contact",
 					type: "text",
 					defaultValue: "Contact",
+				},
+			],
+		},
+		// ---- Hero style -------------------------------------------------
+		{
+			name: "heroStyle",
+			type: "group",
+			label: "Hero Style",
+			fields: [
+				{
+					name: "background",
+					type: "select",
+					label: "Section Background",
+					options: BACKGROUND_OPTIONS,
+					defaultValue: "none",
+					admin: {
+						description:
+							"Animated background rendered behind the Hero section.",
+					},
+				},
+				{
+					name: "titleEffect",
+					type: "select",
+					label: "Heading Effect",
+					options: TITLE_EFFECT_OPTIONS,
+					defaultValue: "none",
+					admin: {
+						description: "Animation effect applied to the hero heading.",
+					},
 				},
 			],
 		},

@@ -34,6 +34,8 @@ import { Users } from "./collections/users.collection";
 import { About } from "./globals/about.global";
 import { Contact } from "./globals/contact.global";
 import { SiteConfig } from "./globals/site-config.global";
+import { UIConfig } from "./globals/ui-config.global";
+import { WorkConfig } from "./globals/work-config.global";
 import { env } from "./lib/env";
 
 const filename = fileURLToPath(import.meta.url);
@@ -58,7 +60,7 @@ export default buildConfig({
 
 	collections: [Users, Media, Projects, Tags, Posts],
 
-	globals: [SiteConfig, About, Contact],
+	globals: [SiteConfig, About, Contact, WorkConfig, UIConfig],
 
 	editor: lexicalEditor(),
 

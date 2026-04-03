@@ -28,6 +28,8 @@ import type {
 	ProjectData,
 	SiteConfigData,
 	TagData,
+	UIConfigData,
+	WorkConfigData,
 } from "./cms.schema";
 import {
 	AboutSchema,
@@ -36,6 +38,8 @@ import {
 	ProjectSchema,
 	SiteConfigSchema,
 	TagSchema,
+	UIConfigSchema,
+	WorkConfigSchema,
 } from "./cms.schema";
 
 // ---------------------------------------------------------------------------
@@ -444,3 +448,49 @@ export const fetchTagBySlug = (
 			}),
 		),
 	);
+
+// ---------------------------------------------------------------------------
+// UIConfig — world map locations and shared UI config
+// ---------------------------------------------------------------------------
+
+export const fetchUIConfig: Effect.Effect<
+	UIConfigData,
+	CmsNetworkError | CmsParseError
+> = Effect.tryPromise({
+	try: async () => {
+		const payload = await getPayload({ config });
+		// biome-ignore lint/suspicious/noExplicitAny: payload-types.ts slug union is regenerated after `pnpm payload:generate-types`
+		return payload.findGlobal({ slug: "ui-config" } as any);
+	},
+	catch: (e) => new CmsNetworkError({ message: String(e) }),
+}).pipe(
+	Effect.flatMap((result) =>
+		Effect.try({
+			try: () => UIConfigSchema.parse(result),
+			catch: (e) => new CmsParseError({ message: String(e) }),
+		}),
+	),
+);
+
+// ---------------------------------------------------------------------------
+// WorkConfig — work section visual style
+// ---------------------------------------------------------------------------
+
+export const fetchWorkConfig: Effect.Effect<
+	WorkConfigData,
+	CmsNetworkError | CmsParseError
+> = Effect.tryPromise({
+	try: async () => {
+		const payload = await getPayload({ config });
+		// biome-ignore lint/suspicious/noExplicitAny: payload-types.ts slug union is regenerated after `pnpm payload:generate-types`
+		return payload.findGlobal({ slug: "work-config" } as any);
+	},
+	catch: (e) => new CmsNetworkError({ message: String(e) }),
+}).pipe(
+	Effect.flatMap((result) =>
+		Effect.try({
+			try: () => WorkConfigSchema.parse(result),
+			catch: (e) => new CmsParseError({ message: String(e) }),
+		}),
+	),
+);

@@ -9,6 +9,7 @@ export { CmsNetworkError, CmsParseError } from "./cms.error";
 export type { BlogListParams } from "./cms.repository";
 export type {
 	AboutData,
+	BackgroundVariant,
 	BlogListData,
 	ContactData,
 	FilterContext,
@@ -16,9 +17,14 @@ export type {
 	PageData,
 	PostData,
 	PostPageData,
+	ProjectCardStyle,
 	ProjectData,
 	SiteConfigData,
 	TagData,
+	TitleEffectVariant,
+	UIConfigData,
+	WorkConfigData,
+	WorldMapLocation,
 } from "./cms.schema";
 export {
 	AboutSchema,
@@ -33,5 +39,8 @@ export {
 	ProjectSchema,
 	SiteConfigSchema,
 	TagSchema,
+	UIConfigSchema,
+	WorkConfigSchema,
+	WorldMapLocationSchema,
 } from "./cms.schema";
 export { CmsService, CmsServiceLive, runCms } from "./cms.service";

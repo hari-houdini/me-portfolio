@@ -15,7 +15,15 @@
  */
 
 import { z } from "zod";
+import type {
+	BackgroundVariant,
+	ProjectCardStyle,
+	TitleEffectVariant,
+} from "../../globals/style-options";
 import type { About, Contact, SiteConfig } from "../../payload-types";
+
+// Re-export style option types for consumers of the CMS schema
+export type { BackgroundVariant, ProjectCardStyle, TitleEffectVariant };
 
 // ---------------------------------------------------------------------------
 // Shared building blocks
@@ -115,6 +123,12 @@ export const SiteConfigSchema = z.object({
 		metaDescription: z.string(),
 		ogImage: MediaOrIdSchema.nullable().optional(),
 	}),
+	heroStyle: z
+		.object({
+			background: z.string().nullable().optional(),
+			titleEffect: z.string().nullable().optional(),
+		})
+		.optional(),
 	updatedAt: z.string().nullable().optional(),
 	createdAt: z.string().nullable().optional(),
 });
@@ -141,6 +155,12 @@ export const AboutSchema = z.object({
 		.nullable()
 		.optional(),
 	photo: MediaOrIdSchema.nullable().optional(),
+	aboutStyle: z
+		.object({
+			background: z.string().nullable().optional(),
+			titleEffect: z.string().nullable().optional(),
+		})
+		.optional(),
 	updatedAt: z.string().nullable().optional(),
 	createdAt: z.string().nullable().optional(),
 });
@@ -175,6 +195,12 @@ export const ContactSchema = z.object({
 			}),
 		)
 		.nullable()
+		.optional(),
+	contactStyle: z
+		.object({
+			background: z.string().nullable().optional(),
+			titleEffect: z.string().nullable().optional(),
+		})
 		.optional(),
 	updatedAt: z.string().nullable().optional(),
 	createdAt: z.string().nullable().optional(),
@@ -229,6 +255,7 @@ export const PostSchema = z.object({
 	status: z.enum(["draft", "published"]),
 	metaTitle: z.string().nullable().optional(),
 	metaDescription: z.string().nullable().optional(),
+	tracingBeam: z.boolean().nullable().optional(),
 	updatedAt: z.string(),
 	createdAt: z.string(),
 });
@@ -237,6 +264,47 @@ export type PostData = z.infer<typeof PostSchema>;
 
 // Note: _AssertPost will be restored after `pnpm payload:generate-types` generates
 // the Post type from the new Posts collection.
+
+// ---------------------------------------------------------------------------
+// WorkConfig — work section visual style (background, card style)
+// ---------------------------------------------------------------------------
+
+export const WorkConfigSchema = z.object({
+	id: z.number(),
+	workStyle: z
+		.object({
+			background: z.string().nullable().optional(),
+			titleEffect: z.string().nullable().optional(),
+			projectCardStyle: z.string().nullable().optional(),
+		})
+		.optional(),
+	updatedAt: z.string().nullable().optional(),
+	createdAt: z.string().nullable().optional(),
+});
+
+export type WorkConfigData = z.infer<typeof WorkConfigSchema>;
+
+// ---------------------------------------------------------------------------
+// UIConfig — world map locations and shared UI config
+// ---------------------------------------------------------------------------
+
+export const WorldMapLocationSchema = z.object({
+	label: z.string(),
+	lat: z.number(),
+	lng: z.number(),
+	id: z.string().nullable().optional(),
+});
+
+export type WorldMapLocation = z.infer<typeof WorldMapLocationSchema>;
+
+export const UIConfigSchema = z.object({
+	id: z.number(),
+	worldMapLocations: z.array(WorldMapLocationSchema).nullable().optional(),
+	updatedAt: z.string().nullable().optional(),
+	createdAt: z.string().nullable().optional(),
+});
+
+export type UIConfigData = z.infer<typeof UIConfigSchema>;
 
 // ---------------------------------------------------------------------------
 // PageData — combined result for the portfolio home page
@@ -248,6 +316,8 @@ export const PageDataSchema = z.object({
 	contact: ContactSchema,
 	projects: z.array(ProjectSchema),
 	recentPosts: z.array(PostSchema),
+	workConfig: WorkConfigSchema,
+	uiConfig: UIConfigSchema,
 });
 
 export type PageData = z.infer<typeof PageDataSchema>;

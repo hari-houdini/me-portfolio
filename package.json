@@ -1,6 +1,6 @@
 {
 	"name": "me-portfolio",
-	"version": "1.7.0",
+	"version": "1.5.0",
 	"private": true,
 	"type": "module",
 	"engines": {
@@ -8,7 +8,8 @@
 		"pnpm": ">=10"
 	},
 	"scripts": {
-		"dev": "next dev --no-server-fast-refresh",
+		"next:dev": "next dev --no-server-fast-refresh",
+		"dev": "varlock run -- pnpm next:dev",
 		"build": "next build",
 		"start": "next start",
 		"typecheck": "tsc --noEmit",
@@ -26,6 +27,7 @@
 		"payload:migrate:create": "payload migrate:create",
 		"payload:migrate:fresh": "payload migrate:fresh",
 		"payload:generate-importmap": "payload generate:importmap",
+		"varlock:load": "varlock load",
 		"varlock:pull": "varlock pull --env development > .env.local",
 		"varlock:push": "varlock push --env development"
 	},
@@ -38,6 +40,7 @@
 		"@react-three/drei": "^10.7.7",
 		"@react-three/fiber": "^9.5.0",
 		"@react-three/postprocessing": "^3.0.4",
+		"dotted-map": "^3.1.0",
 		"effect": "^3.21.0",
 		"embla-carousel": "^8.6.0",
 		"embla-carousel-react": "^8.6.0",

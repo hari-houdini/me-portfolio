@@ -17,7 +17,6 @@ import type { PageData } from "@cms/mod";
 import { CmsService, CmsServiceLive } from "@cms/mod";
 import { AboutSection } from "@features/about/mod";
 import { BlogCarouselLoader } from "@features/blog/mod";
-import { CanvasPlaceholder } from "@features/canvas/mod";
 import { ContactSection } from "@features/contact/mod";
 import { HeroSection } from "@features/hero/mod";
 import { WorkSection } from "@features/work/mod";
@@ -66,6 +65,18 @@ const fallbackPageData: PageData = {
 	},
 	projects: [],
 	recentPosts: [],
+	workConfig: {
+		id: 0,
+		workStyle: {
+			background: "none",
+			titleEffect: "none",
+			projectCardStyle: "glow",
+		},
+	},
+	uiConfig: {
+		id: 0,
+		worldMapLocations: [],
+	},
 };
 
 // ---------------------------------------------------------------------------
@@ -107,7 +118,6 @@ export default async function HomePage() {
 	return (
 		<>
 			<a href="#main-content">Skip to content</a>
-			<CanvasPlaceholder />
 			<main id="main-content">
 				<HeroSection siteConfig={siteConfig} />
 				<BlogCarouselLoader posts={recentPosts} />

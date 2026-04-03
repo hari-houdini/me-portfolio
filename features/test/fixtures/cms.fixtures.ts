@@ -206,4 +206,16 @@ export const mockPageData: PageData = {
 	contact: mockContact,
 	projects: [mockProject, mockFeaturedProject],
 	recentPosts: [mockPost, mockPost2],
+	workConfig: {
+		id: 0,
+		workStyle: {
+			background: "none",
+			titleEffect: "none",
+			projectCardStyle: "glow",
+		},
+	},
+	uiConfig: {
+		id: 0,
+		worldMapLocations: [],
+	},
 };

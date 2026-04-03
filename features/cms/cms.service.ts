@@ -36,6 +36,8 @@ import type {
 	PostData,
 	PostPageData,
 	TagData,
+	UIConfigData,
+	WorkConfigData,
 } from "./cms.schema";
 
 // ---------------------------------------------------------------------------
@@ -65,6 +67,14 @@ export interface CmsServiceShape {
 	getTagBySlug: (
 		slug: string,
 	) => Effect.Effect<TagData, CmsNetworkError | CmsParseError>;
+	getUIConfig: () => Effect.Effect<
+		UIConfigData,
+		CmsNetworkError | CmsParseError
+	>;
+	getWorkConfig: () => Effect.Effect<
+		WorkConfigData,
+		CmsNetworkError | CmsParseError
+	>;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,6 +100,8 @@ export const CmsServiceLive: Layer.Layer<CmsService> = Layer.succeed(
 				contact: Repo.fetchContact,
 				projects: Repo.fetchProjects,
 				recentPosts: Repo.fetchRecentPosts(4),
+				workConfig: Repo.fetchWorkConfig,
+				uiConfig: Repo.fetchUIConfig,
 			}),
 
 		getBlogListData: (params?: BlogListParams) => Repo.fetchBlogList(params),
@@ -109,6 +121,10 @@ export const CmsServiceLive: Layer.Layer<CmsService> = Layer.succeed(
 		getAllTagSlugs: () => Repo.fetchAllTagSlugs,
 
 		getTagBySlug: (slug: string) => Repo.fetchTagBySlug(slug),
+
+		getUIConfig: () => Repo.fetchUIConfig,
+
+		getWorkConfig: () => Repo.fetchWorkConfig,
 	},
 );
 
