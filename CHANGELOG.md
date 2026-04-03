@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/hari-houdini/me-portfolio/compare/v1.6.0...v1.7.0) (2026-04-03)
+
+
+### Features
+
+* **blog:** Phase 4 — Blog system, Varlock env safety, and Embla Carousel ([639fc81](https://github.com/hari-houdini/me-portfolio/commit/639fc81e48dd00ef911c682d6b754554c44fbe42)), closes [#a8a8a8](https://github.com/hari-houdini/me-portfolio/issues/a8a8a8) [#0a0a0](https://github.com/hari-houdini/me-portfolio/issues/0a0a0)
+
 # [1.6.0](https://github.com/hari-houdini/me-portfolio/compare/v1.5.0...v1.6.0) (2026-04-02)
 
 
