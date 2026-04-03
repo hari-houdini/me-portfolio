@@ -14,6 +14,7 @@
  * keystroke.
  */
 
+import { HaloSearch } from "@features/ui/mod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TagData } from "../cms/cms.schema";
@@ -96,9 +97,8 @@ export function BlogFilters({
 				<label htmlFor="blog-search" className={styles.srOnly}>
 					Search posts
 				</label>
-				<input
+				<HaloSearch
 					id="blog-search"
-					type="search"
 					name="search"
 					placeholder="Search posts…"
 					value={searchValue}

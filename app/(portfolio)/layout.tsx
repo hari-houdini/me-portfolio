@@ -42,6 +42,11 @@ const SectionNav = dynamic(
 	{ ssr: false },
 );
 
+const FluidCursor = dynamic(
+	() => import("@features/ui/mod").then((m) => ({ default: m.FluidCursor })),
+	{ ssr: false },
+);
+
 // Inline script — runs before paint to prevent FOUC.
 // Must NOT use any module-level APIs. Keep it tiny.
 const themeInitScript = `(function(){try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();`;
@@ -66,6 +71,9 @@ export default function PortfolioLayout({
 				</Suspense>
 				<Suspense fallback={null}>
 					<SectionNav />
+				</Suspense>
+				<Suspense fallback={null}>
+					<FluidCursor />
 				</Suspense>
 				{children}
 			</body>

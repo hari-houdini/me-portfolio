@@ -1,0 +1,105 @@
+/* ---------------------------------------------------------------------------
+   Shared button base
+   --------------------------------------------------------------------------- */
+
+.base {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--space-xs);
+	padding: var(--space-xs) var(--space-md);
+	font-family: var(--font-heading);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	border-radius: var(--radius-md);
+	cursor: pointer;
+	text-decoration: none;
+	transition:
+		opacity var(--transition-fast),
+		transform var(--transition-fast),
+		box-shadow var(--transition-fast);
+	border: none;
+	outline: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Glow button
+   --------------------------------------------------------------------------- */
+
+.glow {
+	background: var(--color-cta);
+	color: #000;
+}
+
+.glow:hover {
+	box-shadow:
+		0 0 20px var(--color-cta),
+		0 0 40px rgba(0, 247, 255, 0.4);
+	transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------------------------
+   Border-beam button — @property animated conic-gradient border
+   --------------------------------------------------------------------------- */
+
+@property --angle {
+	syntax: "<angle>";
+	inherits: false;
+	initial-value: 0deg;
+}
+
+@keyframes border-spin {
+	to {
+		--angle: 360deg;
+	}
+}
+
+.borderBeam {
+	background: var(--color-surface);
+	color: var(--color-text);
+	position: relative;
+	isolation: isolate;
+}
+
+.borderBeam::before {
+	content: "";
+	position: absolute;
+	inset: -1px;
+	border-radius: inherit;
+	padding: 1px;
+	background: conic-gradient(
+		from var(--angle),
+		var(--color-cta),
+		var(--color-icon),
+		var(--color-border-accent),
+		var(--color-hover),
+		var(--color-special),
+		var(--color-cta)
+	);
+	-webkit-mask:
+		linear-gradient(#fff 0 0) content-box,
+		linear-gradient(#fff 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	animation: border-spin 3s linear infinite;
+	z-index: -1;
+}
+
+.borderBeam:hover {
+	background: var(--color-surface-raised);
+}
+
+/* ---------------------------------------------------------------------------
+   Magnetic button — JS translates the element; CSS handles hover state
+   --------------------------------------------------------------------------- */
+
+.magnetic {
+	background: transparent;
+	color: var(--color-cta);
+	border: 1px solid var(--color-cta);
+	will-change: transform;
+}
+
+.magnetic:hover {
+	background: var(--color-accent-dim);
+}

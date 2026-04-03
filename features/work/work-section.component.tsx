@@ -58,7 +58,10 @@ export function WorkSection({
 					<ul className={styles.projectList} aria-label="Projects">
 						{projects.map((project) => (
 							<li key={project.id}>
-								<ProjectCard project={project} />
+								<ProjectCard
+									project={project}
+									cardStyle={workConfig?.workStyle?.projectCardStyle ?? "glow"}
+								/>
 							</li>
 						))}
 					</ul>

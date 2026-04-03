@@ -4,14 +4,56 @@
  * Individual project card — thumbnail, title, year, description, tags, links.
  * Pure Server Component. Renders the thumbnail via next/image when a URL is
  * available from the Payload Media relation.
+ *
+ * cardStyle selects the hover/interaction variant from features/ui/cards.
+ * Client-only card variants are lazy-loaded via next/dynamic.
  */
 
-import type { MediaObject, ProjectData, TagData } from "@cms/mod";
+import type {
+	MediaObject,
+	ProjectCardStyle,
+	ProjectData,
+	TagData,
+} from "@cms/mod";
+import { FlipCard } from "@features/ui/cards/flip-card.component";
+import { GlassmorphismCard } from "@features/ui/cards/glassmorphism-card.component";
+import dynamic from "next/dynamic";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import styles from "./work-section.module.css";
+
+const GlowCard = dynamic(
+	() =>
+		import("@features/ui/cards/glow-card.client.component").then((m) => ({
+			default: m.GlowCard,
+		})),
+	{ ssr: false, loading: () => <div className={styles.card} /> },
+);
+const SpotlightCard = dynamic(
+	() =>
+		import("@features/ui/cards/spotlight-card.client.component").then((m) => ({
+			default: m.SpotlightCard,
+		})),
+	{ ssr: false, loading: () => <div className={styles.card} /> },
+);
+const TiltCard = dynamic(
+	() =>
+		import("@features/ui/cards/tilt-card.client.component").then((m) => ({
+			default: m.TiltCard,
+		})),
+	{ ssr: false, loading: () => <div className={styles.card} /> },
+);
+const BorderBeamCard = dynamic(
+	() =>
+		import("@features/ui/cards/border-beam-card.client.component").then(
+			(m) => ({ default: m.BorderBeamCard }),
+		),
+	{ ssr: false, loading: () => <div className={styles.card} /> },
+);
 
 interface ProjectCardProps {
 	project: ProjectData;
+	cardStyle?: ProjectCardStyle | string | null;
 }
 
 function isMediumObject(value: unknown): value is MediaObject {
@@ -23,14 +65,13 @@ function isMediumObject(value: unknown): value is MediaObject {
 	);
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+function CardBody({ project }: { project: ProjectData }) {
 	const { title, description, tags, year, url, github, featured, thumbnail } =
 		project;
-
 	const media = isMediumObject(thumbnail) ? thumbnail : null;
 
 	return (
-		<article className={styles.card} aria-label={title}>
+		<article aria-label={title}>
 			{media?.url ? (
 				<div className={styles.cardImage}>
 					<Image
@@ -90,5 +131,37 @@ export function ProjectCard({ project }: ProjectCardProps) {
 				</div>
 			</div>
 		</article>
+	);
+}
+
+function CardWrapper({
+	cardStyle,
+	children,
+}: {
+	cardStyle: ProjectCardProps["cardStyle"];
+	children: ReactNode;
+}) {
+	switch (cardStyle) {
+		case "spotlight":
+			return <SpotlightCard>{children}</SpotlightCard>;
+		case "tilt":
+			return <TiltCard>{children}</TiltCard>;
+		case "flip":
+			return <FlipCard front={children} back={children} />;
+		case "glassmorphism":
+			return <GlassmorphismCard>{children}</GlassmorphismCard>;
+		case "border-beam":
+			return <BorderBeamCard>{children}</BorderBeamCard>;
+		default:
+			// "glow" is the default
+			return <GlowCard>{children}</GlowCard>;
+	}
+}
+
+export function ProjectCard({ project, cardStyle = "glow" }: ProjectCardProps) {
+	return (
+		<CardWrapper cardStyle={cardStyle}>
+			<CardBody project={project} />
+		</CardWrapper>
 	);
 }

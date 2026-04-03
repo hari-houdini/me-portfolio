@@ -1,0 +1,149 @@
+/* ---------------------------------------------------------------------------
+   Shared card base
+   --------------------------------------------------------------------------- */
+
+.card {
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--radius-md);
+	overflow: hidden;
+	transition: transform var(--transition-base);
+}
+
+/* ---------------------------------------------------------------------------
+   Glow card
+   --------------------------------------------------------------------------- */
+
+.glow {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+}
+
+.glow:hover {
+	transform: translateY(-3px);
+	box-shadow:
+		0 0 16px var(--color-cta),
+		0 0 32px rgba(0, 247, 255, 0.2);
+	border-color: var(--color-cta);
+}
+
+/* ---------------------------------------------------------------------------
+   Spotlight card — radial gradient follows cursor via CSS vars
+   --------------------------------------------------------------------------- */
+
+.spotlight {
+	background: radial-gradient(
+			circle at var(--x, 50%) var(--y, 50%),
+			rgba(0, 247, 255, 0.08) 0%,
+			transparent 60%
+		),
+		var(--color-surface);
+	border: 1px solid var(--color-border);
+}
+
+/* ---------------------------------------------------------------------------
+   Tilt card — JS applies perspective rotation
+   --------------------------------------------------------------------------- */
+
+.tilt {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	will-change: transform;
+}
+
+/* ---------------------------------------------------------------------------
+   Flip card — CSS 3D flip on hover
+   --------------------------------------------------------------------------- */
+
+.flipOuter {
+	perspective: 800px;
+	height: 100%;
+	min-height: 300px;
+}
+
+.flipInner {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	transform-style: preserve-3d;
+	transition: transform 0.55s ease;
+}
+
+.flipOuter:hover .flipInner {
+	transform: rotateY(180deg);
+}
+
+.flipFront,
+.flipBack {
+	position: absolute;
+	inset: 0;
+	backface-visibility: hidden;
+	border-radius: var(--radius-md);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+}
+
+.flipBack {
+	transform: rotateY(180deg);
+	padding: var(--space-md);
+	justify-content: center;
+	gap: var(--space-sm);
+}
+
+/* ---------------------------------------------------------------------------
+   Glassmorphism card
+   --------------------------------------------------------------------------- */
+
+.glassmorphism {
+	background: rgba(255, 255, 255, 0.04);
+	-webkit-backdrop-filter: blur(12px) saturate(160%);
+	backdrop-filter: blur(12px) saturate(160%);
+	border: 1px solid var(--color-border-accent);
+}
+
+/* ---------------------------------------------------------------------------
+   Border-beam card — animated conic-gradient border
+   --------------------------------------------------------------------------- */
+
+@property --border-angle {
+	syntax: "<angle>";
+	inherits: false;
+	initial-value: 0deg;
+}
+
+@keyframes card-border-spin {
+	to {
+		--border-angle: 360deg;
+	}
+}
+
+.borderBeamCard {
+	background: var(--color-surface);
+	position: relative;
+	isolation: isolate;
+}
+
+.borderBeamCard::before {
+	content: "";
+	position: absolute;
+	inset: -1px;
+	border-radius: inherit;
+	padding: 1px;
+	background: conic-gradient(
+		from var(--border-angle),
+		var(--color-cta),
+		var(--color-special),
+		var(--color-border-accent),
+		var(--color-cta)
+	);
+	-webkit-mask:
+		linear-gradient(#fff 0 0) content-box,
+		linear-gradient(#fff 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+	animation: card-border-spin 4s linear infinite;
+	z-index: -1;
+}
