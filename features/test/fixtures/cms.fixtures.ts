@@ -15,8 +15,10 @@ import type {
 	AboutData,
 	ContactData,
 	PageData,
+	PostData,
 	ProjectData,
 	SiteConfigData,
+	TagData,
 } from "../../../features/cms/cms.schema";
 
 export const mockSiteConfig: SiteConfigData = {
@@ -96,17 +98,31 @@ export const mockContact: ContactData = {
 	createdAt: "2026-01-01T00:00:00.000Z",
 };
 
+export const mockTag: TagData = {
+	id: 1,
+	label: "Three.js",
+	slug: "three-js",
+	description: "3D graphics library for the web",
+	updatedAt: "2026-01-01T00:00:00.000Z",
+	createdAt: "2026-01-01T00:00:00.000Z",
+};
+
+export const mockTag2: TagData = {
+	id: 2,
+	label: "React",
+	slug: "react",
+	description: null,
+	updatedAt: "2026-01-01T00:00:00.000Z",
+	createdAt: "2026-01-01T00:00:00.000Z",
+};
+
 export const mockProject: ProjectData = {
 	id: 1,
 	title: "Immersive Portfolio",
 	description: "A real-time 3D portfolio built with Three.js and React.",
 	longDescription: null,
 	thumbnail: null,
-	tags: [
-		{ tag: "Three.js", id: "1" },
-		{ tag: "React", id: "2" },
-		{ tag: "TypeScript", id: "3" },
-	],
+	tags: [mockTag, mockTag2],
 	year: 2026,
 	url: "https://harihoudini.dev",
 	github: "https://github.com/hari-houdini/me-portfolio",
@@ -126,9 +142,68 @@ export const mockFeaturedProject: ProjectData = {
 	order: 2,
 };
 
+/** Minimal Lexical body — a single paragraph with 200 words for reading time tests */
+const mockLexicalBody = {
+	root: {
+		type: "root" as const,
+		direction: "ltr" as const,
+		format: "left" as const,
+		indent: 0,
+		version: 1,
+		children: [
+			{
+				type: "paragraph",
+				version: 1,
+				children: [
+					{
+						type: "text",
+						// 40 words — reading time = 1 min
+						text: "Alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu alpha bravo charlie delta echo foxtrot golf hotel india juliet",
+						version: 1,
+					},
+				],
+			},
+		],
+	},
+};
+
+export const mockPost: PostData = {
+	id: 1,
+	title: "Building a Galaxy with Three.js",
+	slug: "building-a-galaxy-with-three-js",
+	body: mockLexicalBody,
+	excerpt:
+		"A deep dive into procedural generation with Three.js particle systems.",
+	coverImage: null,
+	tags: [mockTag],
+	publishedAt: "2026-02-01T10:00:00.000Z",
+	status: "published",
+	metaTitle: null,
+	metaDescription: null,
+	updatedAt: "2026-02-01T10:00:00.000Z",
+	createdAt: "2026-02-01T10:00:00.000Z",
+};
+
+export const mockPost2: PostData = {
+	id: 2,
+	title: "Effect-ts in a Next.js App",
+	slug: "effect-ts-next-js",
+	body: mockLexicalBody,
+	excerpt: "How to use Effect-ts for typed service layers in Next.js.",
+	coverImage: null,
+	tags: [mockTag2],
+	publishedAt: "2026-01-15T09:00:00.000Z",
+	status: "published",
+	metaTitle: null,
+	metaDescription: null,
+	updatedAt: "2026-01-15T09:00:00.000Z",
+	createdAt: "2026-01-15T09:00:00.000Z",
+};
+
 export const mockPageData: PageData = {
 	siteConfig: mockSiteConfig,
 	about: mockAbout,
 	contact: mockContact,
 	projects: [mockProject, mockFeaturedProject],
+	recentPosts: [mockPost, mockPost2],
 };

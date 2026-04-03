@@ -146,10 +146,14 @@ me-portfolio/
 │       └── msw/
 │           ├── server.ts
 │           └── handlers.ts
+├── lib/
+│   └── env.ts                        ← Zod-validated env module (Phase 4)
 ├── collections/
 │   ├── users.collection.ts
 │   ├── media.collection.ts           ← Uses @payloadcms/storage-s3 in production
-│   └── projects.collection.ts
+│   ├── projects.collection.ts        ← tags migrated to Tags relationship (Phase 4)
+│   ├── tags.collection.ts            ← Shared tag taxonomy (Phase 4)
+│   └── posts.collection.ts           ← Blog posts (Phase 4)
 ├── globals/
 │   ├── site-config.global.ts
 │   ├── about.global.ts
@@ -277,20 +281,43 @@ pnpm dev
 pnpm test --run  # all ~20+ tests pass
 ```
 
-### Phase 4: `feat/rewrite-p4-cicd`
+### Phase 4: `feat/rewrite-p4-blog-varlock`
 
-**Goal:** CI/CD rebuilt for Next.js + SST. CLAUDE.md rewritten.
+**Goal:** Typed environment validation + blog feature (Posts, Tags, Embla carousel, Shiki syntax
+highlighting, server-driven search/filter). All WCAG AAA contrast standards applied globally.
 
-**Create/Modify:**
-- `.github/workflows/ci.yml`, `deploy.yml`, `release.yml`, `claude-review.yml`
-- `CLAUDE.md` (full rewrite)
-- Delete `.github/workflows/bundle-size.yml` (Cloudflare-specific)
+> **Note:** CI/CD, SST deploy pipeline, and Varlock secret injection to production are deferred to
+> a separate deployment PRD. This phase adds the Varlock CLI config and `lib/env.ts` runtime
+> validation only.
+
+**Create:**
+- `lib/env.ts` — Zod-validated env module; replaces raw `process.env` in app code
+- `.varlock` — Secret key definitions for `varlock pull`
+- `collections/tags.collection.ts` — Shared Tags collection (Posts + Projects)
+- `collections/posts.collection.ts` — Blog Posts collection
+- `features/blog/` — Full blog pod (list, post, carousel, filters, Shiki renderer, reading time)
+- `app/(portfolio)/blog/` — Blog routes (`page.tsx`, `[slug]/page.tsx`, `tag/[slug]/page.tsx`,
+  `layout.tsx`)
+
+**Modify:**
+- `payload.config.ts` — Register Tags + Posts; use `env.*`
+- `collections/projects.collection.ts` — Migrate `tags` to relationship
+- `features/cms/` — Add PostSchema, TagSchema, blog repository + service methods
+- `app/(portfolio)/page.tsx` — Add `BlogCarouselLoader` after `HeroSection`
+- `app/(portfolio)/globals.css` — Update `--color-text-muted` to `#a8a8a8`; add `:focus-visible`
 
 **Verification:**
 ```bash
-# CI passes on PR push
-pnpm sst deploy --stage dev  # deploys to AWS
+pnpm payload:generate-types  # regenerate types after Tags + Posts added
+pnpm typecheck && pnpm ci:check && pnpm test --run
+pnpm dev
+# / → hero + carousel (4 posts) + about + work + contact
+# /blog → list with search/sort/filter
+# /blog/[slug] → post with Shiki code blocks, reading time, prev/next
+# /blog/tag/[slug] → tag archive
 ```
+
+**Linked PRD:** [PRD-003 — Blog and Typed Environment](./PRD-003-blog-varlock.md)
 
 ---
 
@@ -341,7 +368,7 @@ pnpm sst deploy --stage dev  # deploys to AWS
 | P1 | `pnpm install && pnpm typecheck && pnpm ci:check && pnpm dev` | Server starts, `/admin` renders |
 | P2 | `pnpm payload:generate-types && pnpm typecheck && pnpm test --run` | Types clean, all CMS tests pass |
 | P3 | `pnpm dev && pnpm test --run` | SSR HTML visible in source, ~20+ tests pass |
-| P4 | CI green on PR push, `pnpm sst deploy --stage dev` | Deploys to AWS, `/admin` accessible |
+| P4 | `pnpm typecheck && pnpm test --run && pnpm dev` | Env validated at startup, `/blog` renders, carousel on home page, Shiki highlighting works |
 
 ### Post All Phases
 

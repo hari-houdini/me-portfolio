@@ -70,6 +70,8 @@ export interface Config {
     users: User;
     media: Media;
     projects: Project;
+    tags: Tag;
+    posts: Post;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +82,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     projects: ProjectsSelect<false> | ProjectsSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -232,14 +236,9 @@ export interface Project {
    */
   thumbnail?: (number | null) | Media;
   /**
-   * e.g. "React", "Three.js", "TypeScript"
+   * Select tags from the shared tag taxonomy.
    */
-  tags?:
-    | {
-        tag: string;
-        id?: string | null;
-      }[]
-    | null;
+  tags?: (number | Tag)[] | null;
   /**
    * Year the project was completed.
    */
@@ -264,6 +263,91 @@ export interface Project {
    * Only published projects are shown on the portfolio.
    */
   status: 'draft' | 'published';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Shared taxonomy for blog posts and projects.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  /**
+   * Display name shown on cards and filter chips. e.g. "React"
+   */
+  label: string;
+  /**
+   * URL-safe identifier used in /blog/tag/[slug]. Auto-generated from label if left empty.
+   */
+  slug: string;
+  /**
+   * Optional description shown on the tag archive page.
+   */
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Blog posts published on /blog.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  /**
+   * URL path segment: /blog/[slug]. Auto-generated from title if left empty.
+   */
+  slug: string;
+  /**
+   * Full post content. Supports headings, code blocks, links, and images.
+   */
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Short description shown on list cards and used as fallback meta description. If omitted, the first paragraph is used.
+   */
+  excerpt?: string | null;
+  /**
+   * Used as the Open Graph image for social sharing. Recommended: 1200×630.
+   */
+  coverImage?: (number | null) | Media;
+  /**
+   * Select tags from the shared tag taxonomy.
+   */
+  tags?: (number | Tag)[] | null;
+  /**
+   * Auto-set when status changes to Published. Override manually if needed.
+   */
+  publishedAt?: string | null;
+  /**
+   * Only published posts are shown on /blog.
+   */
+  status: 'draft' | 'published';
+  /**
+   * SEO <title> override. Defaults to the post title if left empty.
+   */
+  metaTitle?: string | null;
+  /**
+   * SEO meta description override. Defaults to the excerpt if left empty.
+   */
+  metaDescription?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -302,6 +386,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'projects';
         value: number | Project;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'posts';
+        value: number | Post;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -418,18 +510,42 @@ export interface ProjectsSelect<T extends boolean = true> {
   description?: T;
   longDescription?: T;
   thumbnail?: T;
-  tags?:
-    | T
-    | {
-        tag?: T;
-        id?: T;
-      };
+  tags?: T;
   year?: T;
   url?: T;
   github?: T;
   featured?: T;
   order?: T;
   status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  label?: T;
+  slug?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  body?: T;
+  excerpt?: T;
+  coverImage?: T;
+  tags?: T;
+  publishedAt?: T;
+  status?: T;
+  metaTitle?: T;
+  metaDescription?: T;
   updatedAt?: T;
   createdAt?: T;
 }

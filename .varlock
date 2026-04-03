@@ -1,0 +1,22 @@
+# .varlock
+#
+# Varlock secret definitions for harihoudini.dev.
+#
+# Usage:
+#   Local dev:    pnpm varlock:pull  (writes to .env.local)
+#   Update vault: pnpm varlock:push
+#
+# Each line: KEY  required|optional  type  Description
+#
+# Required at runtime (absent during `next build` in CI — that is intentional).
+DATABASE_URL       required  string  Supabase PostgreSQL connection string. Append ?pgBouncer=true for Lambda.
+PAYLOAD_SECRET     required  string  Payload JWT signing secret. Minimum 32 characters.
+NEXT_PUBLIC_SERVER_URL  required  string  Public canonical URL. https://harihoudini.dev in production.
+
+# Required in production only — provisioned by SST, injected by Varlock at deploy time.
+S3_BUCKET          optional  string  SST-provisioned S3 bucket name for Payload media uploads.
+S3_REGION          optional  string  AWS region. Defaults to us-east-1.
+
+# Local development only — not needed in Lambda (IAM role provides credentials).
+AWS_ACCESS_KEY_ID      optional  string  AWS IAM access key for local S3 testing.
+AWS_SECRET_ACCESS_KEY  optional  string  AWS IAM secret for local S3 testing.

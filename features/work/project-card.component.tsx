@@ -6,7 +6,7 @@
  * available from the Payload Media relation.
  */
 
-import type { MediaObject, ProjectData } from "@cms/mod";
+import type { MediaObject, ProjectData, TagData } from "@cms/mod";
 import Image from "next/image";
 import styles from "./work-section.module.css";
 
@@ -55,11 +55,15 @@ export function ProjectCard({ project }: ProjectCardProps) {
 				<p className={styles.cardDescription}>{description}</p>
 				{tags && tags.length > 0 ? (
 					<ul className={styles.tagList} aria-label="Technologies">
-						{tags.map(({ tag, id }) => (
-							<li key={id ?? tag} className={styles.tag}>
-								{tag}
-							</li>
-						))}
+						{tags
+							.filter(
+								(t): t is TagData => typeof t === "object" && "label" in t,
+							)
+							.map((tag) => (
+								<li key={tag.id} className={styles.tag}>
+									{tag.label}
+								</li>
+							))}
 					</ul>
 				) : null}
 				<div className={styles.cardLinks}>

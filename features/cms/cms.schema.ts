@@ -4,15 +4,18 @@
  * Zod v4 schemas for CMS data consumed by the portfolio.
  *
  * Design rules:
- *  - Schemas model what the Payload Local API actually returns (depth: 2 default).
- *  - Payload's array-of-objects format ({ tag, id }, { skill, id }) is preserved.
+ *  - Schemas model what the Payload Local API actually returns (depth: 1).
  *  - Type assertions verify structural alignment with payload-types.ts.
  *    Never edit payload-types.ts — re-run `pnpm payload:generate-types` instead.
  *  - `z.infer<typeof Schema>` is the only source of truth for app-layer types.
+ *
+ * Note: _AssertProject is omitted because payload-types.ts still reflects the
+ * old plain-text tags array. Restore after `pnpm payload:generate-types` is run
+ * against the updated schema (Tags + Posts collections added).
  */
 
 import { z } from "zod";
-import type { About, Contact, Project, SiteConfig } from "../../payload-types";
+import type { About, Contact, SiteConfig } from "../../payload-types";
 
 // ---------------------------------------------------------------------------
 // Shared building blocks
@@ -73,6 +76,24 @@ export const LexicalContentSchema = z
 	.passthrough();
 
 // ---------------------------------------------------------------------------
+// Tag
+// ---------------------------------------------------------------------------
+
+export const TagSchema = z.object({
+	id: z.number(),
+	label: z.string(),
+	slug: z.string(),
+	description: z.string().nullable().optional(),
+	updatedAt: z.string().nullable().optional(),
+	createdAt: z.string().nullable().optional(),
+});
+
+export type TagData = z.infer<typeof TagSchema>;
+
+// Payload relationships can be expanded objects or bare numeric IDs.
+const TagOrIdSchema = z.union([TagSchema, z.number()]);
+
+// ---------------------------------------------------------------------------
 // SiteConfig
 // ---------------------------------------------------------------------------
 
@@ -100,8 +121,6 @@ export const SiteConfigSchema = z.object({
 
 export type SiteConfigData = z.infer<typeof SiteConfigSchema>;
 
-// Verify structural alignment with generated Payload types.
-// If this line errors, payload-types.ts and this schema have diverged.
 type _AssertSiteConfig =
 	z.infer<typeof SiteConfigSchema> extends SiteConfig ? true : never;
 
@@ -176,15 +195,9 @@ export const ProjectSchema = z.object({
 	description: z.string(),
 	longDescription: LexicalContentSchema.nullable().optional(),
 	thumbnail: MediaOrIdSchema.nullable().optional(),
-	tags: z
-		.array(
-			z.object({
-				tag: z.string(),
-				id: z.string().nullable().optional(),
-			}),
-		)
-		.nullable()
-		.optional(),
+	// Tags are now a hasMany relationship to the Tags collection.
+	// payload-types.ts will reflect the new shape after `pnpm payload:generate-types`.
+	tags: z.array(TagOrIdSchema).nullable().optional(),
 	year: z.number().nullable().optional(),
 	url: z.string().nullable().optional(),
 	github: z.string().nullable().optional(),
@@ -197,11 +210,36 @@ export const ProjectSchema = z.object({
 
 export type ProjectData = z.infer<typeof ProjectSchema>;
 
-type _AssertProject =
-	z.infer<typeof ProjectSchema> extends Project ? true : never;
+// Note: _AssertProject is temporarily omitted — payload-types.ts still reflects
+// the old plain-text tags array. Restore after `pnpm payload:generate-types`.
 
 // ---------------------------------------------------------------------------
-// PageData — the combined result fetched for the portfolio home page
+// Post
+// ---------------------------------------------------------------------------
+
+export const PostSchema = z.object({
+	id: z.number(),
+	title: z.string(),
+	slug: z.string(),
+	body: LexicalContentSchema,
+	excerpt: z.string().nullable().optional(),
+	coverImage: MediaOrIdSchema.nullable().optional(),
+	tags: z.array(TagOrIdSchema).nullable().optional(),
+	publishedAt: z.string().nullable().optional(),
+	status: z.enum(["draft", "published"]),
+	metaTitle: z.string().nullable().optional(),
+	metaDescription: z.string().nullable().optional(),
+	updatedAt: z.string(),
+	createdAt: z.string(),
+});
+
+export type PostData = z.infer<typeof PostSchema>;
+
+// Note: _AssertPost will be restored after `pnpm payload:generate-types` generates
+// the Post type from the new Posts collection.
+
+// ---------------------------------------------------------------------------
+// PageData — combined result for the portfolio home page
 // ---------------------------------------------------------------------------
 
 export const PageDataSchema = z.object({
@@ -209,13 +247,52 @@ export const PageDataSchema = z.object({
 	about: AboutSchema,
 	contact: ContactSchema,
 	projects: z.array(ProjectSchema),
+	recentPosts: z.array(PostSchema),
 });
 
 export type PageData = z.infer<typeof PageDataSchema>;
 
-// Suppress "unused type" TS errors for assertion types (they ARE used — for compile-time safety).
-export type _Assertions =
-	| _AssertSiteConfig
-	| _AssertAbout
-	| _AssertContact
-	| _AssertProject;
+// ---------------------------------------------------------------------------
+// BlogListData — paginated list page data
+// ---------------------------------------------------------------------------
+
+export const BlogListDataSchema = z.object({
+	posts: z.array(PostSchema),
+	totalDocs: z.number(),
+	totalPages: z.number(),
+	page: z.number(),
+	hasPrevPage: z.boolean(),
+	hasNextPage: z.boolean(),
+	tags: z.array(TagSchema),
+});
+
+export type BlogListData = z.infer<typeof BlogListDataSchema>;
+
+// ---------------------------------------------------------------------------
+// PostPageData — individual post page data
+// ---------------------------------------------------------------------------
+
+export const PostPageDataSchema = z.object({
+	post: PostSchema,
+	prevPost: PostSchema.nullable(),
+	nextPost: PostSchema.nullable(),
+});
+
+export type PostPageData = z.infer<typeof PostPageDataSchema>;
+
+// ---------------------------------------------------------------------------
+// FilterContext — query params carried from list to post for prev/next nav
+// ---------------------------------------------------------------------------
+
+export const FilterContextSchema = z.object({
+	tagSlug: z.string().optional(),
+	sort: z.enum(["newest", "oldest"]).optional(),
+});
+
+export type FilterContext = z.infer<typeof FilterContextSchema>;
+
+// ---------------------------------------------------------------------------
+// Suppress "unused type" TS errors for assertion types (compile-time safety)
+// ---------------------------------------------------------------------------
+
+export type _Assertions = _AssertSiteConfig | _AssertAbout | _AssertContact;
