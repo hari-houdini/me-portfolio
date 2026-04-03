@@ -10,6 +10,7 @@
  *  - Footer: prev/next navigation (filter-context aware)
  */
 
+import { LampEffect } from "@features/ui/mod";
 import type { FilterContext, PostPageData } from "../cms/cms.schema";
 import styles from "./blog-post.module.css";
 import { LexicalRenderer } from "./lexical-renderer.component";
@@ -126,12 +127,14 @@ export async function BlogPost({ data, filterContext }: BlogPostProps) {
 					{prevPost ? (
 						<div className={styles.navItem}>
 							<span className={styles.navLabel}>← Previous</span>
-							<a
-								href={buildPostUrl(prevPost.slug, filterContext)}
-								className={styles.navLink}
-							>
-								{prevPost.title}
-							</a>
+							<LampEffect>
+								<a
+									href={buildPostUrl(prevPost.slug, filterContext)}
+									className={styles.navLink}
+								>
+									{prevPost.title}
+								</a>
+							</LampEffect>
 						</div>
 					) : (
 						<div />
@@ -140,12 +143,14 @@ export async function BlogPost({ data, filterContext }: BlogPostProps) {
 					{nextPost ? (
 						<div className={`${styles.navItem} ${styles.navItemNext}`}>
 							<span className={styles.navLabel}>Next →</span>
-							<a
-								href={buildPostUrl(nextPost.slug, filterContext)}
-								className={styles.navLink}
-							>
-								{nextPost.title}
-							</a>
+							<LampEffect>
+								<a
+									href={buildPostUrl(nextPost.slug, filterContext)}
+									className={styles.navLink}
+								>
+									{nextPost.title}
+								</a>
+							</LampEffect>
 						</div>
 					) : null}
 				</nav>

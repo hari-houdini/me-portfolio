@@ -6,6 +6,7 @@
  */
 
 import type { ContactData } from "@cms/mod";
+import { SectionHeading } from "@features/ui/mod";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import styles from "./contact-section.module.css";
@@ -26,6 +27,7 @@ interface ContactSectionProps {
 export function ContactSection({ contact, sectionTitle }: ContactSectionProps) {
 	const { email, ctaText, socials } = contact;
 	const background = contact.contactStyle?.background;
+	const titleEffect = contact.contactStyle?.titleEffect;
 
 	return (
 		<section
@@ -39,9 +41,14 @@ export function ContactSection({ contact, sectionTitle }: ContactSectionProps) {
 				</Suspense>
 			) : null}
 			<div className={styles.container}>
-				<h2 id="contact-heading" className={styles.heading}>
+				<SectionHeading
+					level={2}
+					id="contact-heading"
+					variant={titleEffect}
+					className={styles.heading}
+				>
 					{sectionTitle ?? "Contact"}
-				</h2>
+				</SectionHeading>
 				{ctaText ? <p className={styles.cta}>{ctaText}</p> : null}
 				<address>
 					<a href={`mailto:${email}`} className={styles.emailLink}>

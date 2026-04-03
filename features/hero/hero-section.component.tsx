@@ -3,10 +3,10 @@
  *
  * Hero section — name, tagline, optional subtitle.
  * Pure Server Component: receives CMS props, renders semantic HTML.
- * SectionBackground is lazy-loaded on the client via next/dynamic.
  */
 
 import type { SiteConfigData } from "@cms/mod";
+import { SectionHeading } from "@features/ui/mod";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import styles from "./hero-section.module.css";
@@ -26,6 +26,7 @@ interface HeroSectionProps {
 export function HeroSection({ siteConfig }: HeroSectionProps) {
 	const { name, tagline, subtitle } = siteConfig;
 	const background = siteConfig.heroStyle?.background;
+	const titleEffect = siteConfig.heroStyle?.titleEffect;
 
 	return (
 		<section
@@ -39,9 +40,14 @@ export function HeroSection({ siteConfig }: HeroSectionProps) {
 				</Suspense>
 			) : null}
 			<div className={styles.content}>
-				<h1 id="hero-heading" className={styles.heading}>
+				<SectionHeading
+					level={1}
+					id="hero-heading"
+					variant={titleEffect}
+					className={styles.heading}
+				>
 					{name}
-				</h1>
+				</SectionHeading>
 				<p className={styles.tagline}>{tagline}</p>
 				{subtitle ? <p className={styles.subtitle}>{subtitle}</p> : null}
 			</div>

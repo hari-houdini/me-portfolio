@@ -1,0 +1,139 @@
+/* ---------------------------------------------------------------------------
+   Shared title effect styles
+   --------------------------------------------------------------------------- */
+
+/* Gradient text — pure CSS, RSC-safe */
+.gradient {
+	background: linear-gradient(
+		90deg,
+		var(--color-cta),
+		var(--color-icon),
+		var(--color-border-accent),
+		var(--color-hover),
+		var(--color-special)
+	);
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	color: transparent;
+}
+
+/* Shimmer — CSS animation on a gradient-clipped text */
+@keyframes shimmer {
+	from {
+		background-position: -200% center;
+	}
+	to {
+		background-position: 200% center;
+	}
+}
+
+.shimmer {
+	background: linear-gradient(
+		90deg,
+		var(--color-text-muted) 25%,
+		var(--color-cta) 50%,
+		var(--color-text-muted) 75%
+	);
+	background-size: 200% auto;
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	color: transparent;
+	animation: shimmer 2.5s linear infinite;
+}
+
+/* Glitch — ::before and ::after pseudo-elements with clip-path shift */
+@keyframes glitch-top {
+	0%,
+	100% {
+		clip-path: inset(0 0 95% 0);
+		transform: translateX(0);
+	}
+	20% {
+		clip-path: inset(10% 0 70% 0);
+		transform: translateX(-4px);
+	}
+	40% {
+		clip-path: inset(40% 0 40% 0);
+		transform: translateX(4px);
+	}
+	60% {
+		clip-path: inset(70% 0 10% 0);
+		transform: translateX(-2px);
+	}
+	80% {
+		clip-path: inset(90% 0 5% 0);
+		transform: translateX(2px);
+	}
+}
+
+@keyframes glitch-bot {
+	0%,
+	100% {
+		clip-path: inset(95% 0 0 0);
+		transform: translateX(0);
+	}
+	20% {
+		clip-path: inset(70% 0 10% 0);
+		transform: translateX(4px);
+	}
+	40% {
+		clip-path: inset(40% 0 40% 0);
+		transform: translateX(-4px);
+	}
+	60% {
+		clip-path: inset(10% 0 70% 0);
+		transform: translateX(2px);
+	}
+	80% {
+		clip-path: inset(5% 0 90% 0);
+		transform: translateX(-2px);
+	}
+}
+
+.glitch {
+	position: relative;
+	display: inline-block;
+}
+
+.glitch::before,
+.glitch::after {
+	content: attr(data-text);
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.glitch::before {
+	color: var(--color-cta);
+	animation: glitch-top 2.5s steps(1) infinite;
+	animation-delay: 0.2s;
+}
+
+.glitch::after {
+	color: var(--color-border-accent);
+	animation: glitch-bot 2.5s steps(1) infinite;
+	animation-delay: 0.5s;
+}
+
+/* Typewriter cursor */
+@keyframes blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
+
+.cursor {
+	display: inline-block;
+	width: 2px;
+	height: 1em;
+	background: var(--color-cta);
+	vertical-align: text-bottom;
+	margin-left: 2px;
+	animation: blink 1s step-end infinite;
+}

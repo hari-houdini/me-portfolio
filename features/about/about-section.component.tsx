@@ -3,13 +3,10 @@
  *
  * About section — bio (Lexical rich text), skills list, optional portrait photo.
  * Pure Server Component: receives CMS props, renders semantic HTML.
- *
- * The bio is serialised to HTML using Payload's @payloadcms/richtext-lexical/react
- * RichText component, which handles all standard Lexical node types (paragraphs,
- * headings, bold, italic, links, lists) with full fidelity.
  */
 
 import type { AboutData } from "@cms/mod";
+import { SectionHeading } from "@features/ui/mod";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import dynamic from "next/dynamic";
@@ -31,6 +28,7 @@ interface AboutSectionProps {
 
 export function AboutSection({ about, sectionTitle }: AboutSectionProps) {
 	const background = about.aboutStyle?.background;
+	const titleEffect = about.aboutStyle?.titleEffect;
 
 	return (
 		<section
@@ -44,9 +42,14 @@ export function AboutSection({ about, sectionTitle }: AboutSectionProps) {
 				</Suspense>
 			) : null}
 			<div className={styles.container}>
-				<h2 id="about-heading" className={styles.heading}>
+				<SectionHeading
+					level={2}
+					id="about-heading"
+					variant={titleEffect}
+					className={styles.heading}
+				>
 					{sectionTitle ?? "About"}
-				</h2>
+				</SectionHeading>
 				<div className={styles.bio}>
 					<RichText data={about.bio as unknown as SerializedEditorState} />
 				</div>

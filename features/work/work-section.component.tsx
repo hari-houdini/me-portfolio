@@ -6,6 +6,7 @@
  */
 
 import type { ProjectData, WorkConfigData } from "@cms/mod";
+import { SectionHeading } from "@features/ui/mod";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { ProjectCard } from "./project-card.component";
@@ -31,6 +32,7 @@ export function WorkSection({
 	workConfig,
 }: WorkSectionProps) {
 	const background = workConfig?.workStyle?.background;
+	const titleEffect = workConfig?.workStyle?.titleEffect;
 
 	return (
 		<section
@@ -44,9 +46,14 @@ export function WorkSection({
 				</Suspense>
 			) : null}
 			<div className={styles.container}>
-				<h2 id="work-heading" className={styles.heading}>
+				<SectionHeading
+					level={2}
+					id="work-heading"
+					variant={titleEffect}
+					className={styles.heading}
+				>
 					{sectionTitle ?? "Work"}
-				</h2>
+				</SectionHeading>
 				{projects.length > 0 ? (
 					<ul className={styles.projectList} aria-label="Projects">
 						{projects.map((project) => (
