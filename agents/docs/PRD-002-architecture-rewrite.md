@@ -249,7 +249,7 @@ No new CMS schema is introduced in this rewrite. The existing Payload collection
 | **1 — Foundation** | `feat/rewrite-p1-foundation` | `pnpm dev` starts. `/admin` accessible. | `next.config.ts`, `payload.config.ts`, `sst.config.ts`, unified `package.json`, `app/` stubs, migrated collections/globals |
 | **2 — CMS** | `feat/rewrite-p2-cms` | `pnpm test` passes. Full CMS service layer wired. | `features/cms/` pod, Zod schemas with type assertions, Effect-ts service + repository, `vi.mock('payload')` test suite, zocker fixtures |
 | **3 — Portfolio** | `feat/rewrite-p3-portfolio` | SSR HTML shell. All sections render CMS data. | Async Server Component page, hero/about/work/contact section components, `React.lazy` canvas placeholder, component tests |
-| **4 — CI/CD** | `feat/rewrite-p4-cicd` | CI green. AWS deploy works. | `ci.yml` + `deploy.yml` (Varlock-injected secrets), `CLAUDE.md` rewrite, Cloudflare-specific workflows deleted |
+| **4 — Blog + Varlock** | `feat/rewrite-p4-blog-varlock` | Blog live. Env validated at startup. | `lib/env.ts` (typed env), `.varlock` config, `Tags` + `Posts` collections, blog routes, Embla carousel, Shiki syntax highlighting. See [PRD-003](./PRD-003-blog-varlock.md) |
 
 For the full implementation spec per phase (file lists, verification commands, code examples), see [REWRITE-001](./REWRITE-001-architecture-rewrite.md).
 

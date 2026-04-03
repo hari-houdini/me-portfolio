@@ -16,6 +16,7 @@
 import type { PageData } from "@cms/mod";
 import { CmsService, CmsServiceLive } from "@cms/mod";
 import { AboutSection } from "@features/about/mod";
+import { BlogCarouselLoader } from "@features/blog/mod";
 import { CanvasPlaceholder } from "@features/canvas/mod";
 import { ContactSection } from "@features/contact/mod";
 import { HeroSection } from "@features/hero/mod";
@@ -64,6 +65,7 @@ const fallbackPageData: PageData = {
 		ctaText: "Get in touch",
 	},
 	projects: [],
+	recentPosts: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -100,7 +102,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
 	const data = await getPageData();
-	const { siteConfig, about, contact, projects } = data;
+	const { siteConfig, about, contact, projects, recentPosts } = data;
 
 	return (
 		<>
@@ -108,6 +110,7 @@ export default async function HomePage() {
 			<CanvasPlaceholder />
 			<main id="main-content">
 				<HeroSection siteConfig={siteConfig} />
+				<BlogCarouselLoader posts={recentPosts} />
 				<AboutSection
 					about={about}
 					sectionTitle={siteConfig.sectionTitles?.about}

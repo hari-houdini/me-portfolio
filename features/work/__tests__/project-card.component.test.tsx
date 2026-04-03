@@ -71,7 +71,6 @@ describe("ProjectCard", () => {
 		render(<ProjectCard project={mockProject} />);
 		expect(screen.getByText("Three.js")).toBeInTheDocument();
 		expect(screen.getByText("React")).toBeInTheDocument();
-		expect(screen.getByText("TypeScript")).toBeInTheDocument();
 	});
 
 	it("does not render technologies list when tags is empty", () => {

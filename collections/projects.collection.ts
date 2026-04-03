@@ -7,9 +7,9 @@
  * featured, year, status (draft|published), order.
  *
  * Note on tags field:
- *   Payload's array field wraps each item in an object: [{id, tag: "React"}].
- *   The Zod schema in features/cms/cms.schema.ts handles this via a union
- *   transform that accepts both formats.
+ *   Tags is a hasMany relationship to the Tags collection (shared with Posts).
+ *   The Zod schema in features/cms/cms.schema.ts models expanded tag objects
+ *   or bare IDs using TagOrIdSchema.
  *
  * Access:
  *  - read:   public (portfolio fetches published projects via Local API)
@@ -68,18 +68,13 @@ export const Projects: CollectionConfig = {
 		// ---- Classification ---------------------------------------------
 		{
 			name: "tags",
-			type: "array",
+			type: "relationship",
+			relationTo: "tags",
+			hasMany: true,
 			label: "Technology Tags",
 			admin: {
-				description: 'e.g. "React", "Three.js", "TypeScript"',
+				description: "Select tags from the shared tag taxonomy.",
 			},
-			fields: [
-				{
-					name: "tag",
-					type: "text",
-					required: true,
-				},
-			],
 		},
 		{
 			name: "year",

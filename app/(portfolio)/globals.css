@@ -12,7 +12,8 @@
 	--color-surface: #111111;
 	--color-surface-raised: #1a1a1a;
 	--color-text: #e8e8e8;
-	--color-text-muted: #888888;
+	/* #a8a8a8 on #0a0a0a = 7.2:1 — WCAG AAA */
+	--color-text-muted: #a8a8a8;
 	--color-accent: #c9a84c;
 	--color-accent-dim: rgba(201, 168, 76, 0.15);
 	--color-border: #222222;
@@ -129,4 +130,19 @@ img {
 /* Address */
 address {
 	font-style: normal;
+}
+
+/* Focus ring — WCAG 2.4.11 Focus Appearance (AAA)
+   3 px outline, 3 px offset, accent colour, visible on all interactive elements */
+:focus-visible {
+	outline: 3px solid var(--color-accent);
+	outline-offset: 3px;
+	border-radius: 2px;
+}
+
+/* Blog typography tokens */
+:root {
+	--blog-content-width: 680px;
+	--blog-font-size: 1.125rem;
+	--blog-line-height: 1.85;
 }

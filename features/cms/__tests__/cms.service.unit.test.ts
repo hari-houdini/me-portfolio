@@ -14,16 +14,33 @@ import { CmsNetworkError } from "../cms.error";
 import { CmsService } from "../cms.service";
 
 // ---------------------------------------------------------------------------
+// Shared no-op stubs for blog methods (not under test in this file)
+// ---------------------------------------------------------------------------
+
+const blogStubs = {
+	getBlogListData: () =>
+		Effect.fail(new CmsNetworkError({ message: "not implemented in test" })),
+	getPostPageData: () =>
+		Effect.fail(new CmsNetworkError({ message: "not implemented in test" })),
+	getAllPostSlugs: () => Effect.succeed([] as string[]),
+	getAllTagSlugs: () => Effect.succeed([] as string[]),
+	getTagBySlug: () =>
+		Effect.fail(new CmsNetworkError({ message: "not implemented in test" })),
+} as const;
+
+// ---------------------------------------------------------------------------
 // Test Layer — mock implementation of CmsService
 // ---------------------------------------------------------------------------
 
 const TestCmsServiceLayer = Layer.succeed(CmsService, {
 	getAllPageData: () => Effect.succeed(mockPageData),
+	...blogStubs,
 });
 
 const FailingCmsServiceLayer = Layer.succeed(CmsService, {
 	getAllPageData: () =>
 		Effect.fail(new CmsNetworkError({ message: "CMS unavailable" })),
+	...blogStubs,
 });
 
 // ---------------------------------------------------------------------------
@@ -45,6 +62,7 @@ describe("CmsService: getAllPageData", () => {
 		expect(result.about.bio.root.type).toBe("root");
 		expect(result.contact.email).toBe("hello@harihoudini.dev");
 		expect(result.projects).toHaveLength(2);
+		expect(result.recentPosts).toHaveLength(2);
 	});
 
 	it("propagates CmsNetworkError when the service fails", async () => {
