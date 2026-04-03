@@ -15,6 +15,10 @@ export { GlassmorphismCard } from "./cards/glassmorphism-card.component";
 export { GlowCard } from "./cards/glow-card.client.component";
 export { SpotlightCard } from "./cards/spotlight-card.client.component";
 export { TiltCard } from "./cards/tilt-card.client.component";
+// Carousels
+export { CardStack } from "./carousels/card-stack.client.component";
+export { InfiniteScrollList } from "./carousels/infinite-scroll-list.client.component";
+export { ParallaxScroll } from "./carousels/parallax-scroll.client.component";
 export { FluidCursor } from "./fluid-cursor.client.component";
 export { HaloSearch } from "./halo-search.client.component";
 export { LampEffect } from "./lamp-effect.client.component";

@@ -1,0 +1,118 @@
+/* --------------------------------------------------------------------------
+   Card Stack
+   -------------------------------------------------------------------------- */
+
+.stack {
+	position: relative;
+	width: 100%;
+}
+
+.stackCard {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	transition:
+		transform 0.4s ease,
+		opacity 0.4s ease;
+	will-change: transform, opacity;
+}
+
+.stackCard:first-child {
+	position: relative;
+}
+
+.stackTrigger {
+	all: unset;
+	display: block;
+	width: 100%;
+	cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Infinite Scroll List
+   -------------------------------------------------------------------------- */
+
+@property --scroll-duration {
+	syntax: "<time>";
+	inherits: true;
+	initial-value: 40s;
+}
+
+.scrollOuter {
+	overflow: hidden;
+	width: 100%;
+	-webkit-mask-image: linear-gradient(
+		to right,
+		transparent,
+		black 10%,
+		black 90%,
+		transparent
+	);
+	mask-image: linear-gradient(
+		to right,
+		transparent,
+		black 10%,
+		black 90%,
+		transparent
+	);
+}
+
+.scrollTrack {
+	display: flex;
+	gap: 1rem;
+	width: max-content;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	animation: scrollLeft var(--scroll-duration, 40s) linear infinite;
+}
+
+.scrollTrack:hover {
+	animation-play-state: paused;
+}
+
+.scrollRight {
+	animation-name: scrollRight;
+}
+
+.scrollItem {
+	flex-shrink: 0;
+}
+
+@keyframes scrollLeft {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(-50%);
+	}
+}
+
+@keyframes scrollRight {
+	from {
+		transform: translateX(-50%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.scrollTrack {
+		animation: none;
+	}
+}
+
+/* --------------------------------------------------------------------------
+   Parallax Scroll
+   -------------------------------------------------------------------------- */
+
+.parallaxWrapper {
+	position: relative;
+	overflow: hidden;
+}
+
+.parallaxLayer {
+	will-change: transform;
+}
