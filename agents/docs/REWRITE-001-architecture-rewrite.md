@@ -319,6 +319,47 @@ pnpm dev
 
 **Linked PRD:** [PRD-003 — Blog and Typed Environment](./PRD-003-blog-varlock.md)
 
+### Phase 5: `feat/p5-ui-branding`
+
+**Goal:** Full UI/UX and branding overhaul. Self-hosted fonts, dark/light theme toggle, 5-neon
+accent system, 10 per-section Three.js/GLSL backgrounds (CMS-selectable), section nav with Liquid
+Glass + Lamp Effect, Fluid Cursor, Halo Search, 4 title effects, 3 button styles, 6 card styles,
+3 border styles, World Map, Tracing Beam, Reading Progress, and 3 supplementary carousels. The
+existing global Three.js galaxy/warp canvas is removed and replaced by per-section backgrounds.
+
+**Create:**
+- `features/ui/` pod — all 30+ UI components, GLSL shaders, CSS modules
+- `collections/work-config.global.ts` — work section style + card style picker
+- `collections/ui-config.global.ts` — world map locations (CMS array of lat/lng)
+
+**Modify:**
+- `app/(portfolio)/layout.tsx` — `next/font/local` (Inter + Lora), FOUC script, ThemeToggle, SectionNav, FluidCursor
+- `app/(portfolio)/globals.css` — dark/light token system, 5 neon accents, font vars
+- All section components — add `id`, `<SectionBackground>`, `<SectionHeading>`
+- `features/work/project-card.component.tsx` — `cardStyle` prop + card variant dispatch
+- `features/contact/contact-section.component.tsx` — add `<WorldMap>`
+- `features/blog/blog-filters.client.component.tsx` — replace `<input>` with `<HaloSearch>`
+- `features/blog/blog-post.component.tsx` — add `<LampEffect>` to prev/next
+- `features/cms/` — extend schemas, repository, service with UIConfig + WorkConfig
+- `payload.config.ts` — register WorkConfig + UIConfig globals
+- **Delete:** `features/canvas/` pod
+
+**Verification:**
+```bash
+pnpm typecheck && pnpm ci:check && pnpm test --run
+pnpm dev
+# → Dark mode loads, no FOUC; toggle to light persists on reload
+# → Section nav fixed, glass bg, lamp hover
+# → Each section renders CMS-selected background
+# → Fluid cursor with neon trails
+# → Blog search: halo ring on focus
+# → Blog post: progress bar + tracing beam
+# → Contact: World Map SVG with location dots
+# → prefers-reduced-motion → no canvases, no cursor
+```
+
+**Linked PRD:** [PRD-004 — UI/UX and Branding Overhaul](./PRD-004-ui-branding.md)
+
 ---
 
 ## 6. Environment Variables
