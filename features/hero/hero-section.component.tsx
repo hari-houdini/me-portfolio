@@ -16,7 +16,11 @@ export function HeroSection({ siteConfig }: HeroSectionProps) {
 	const { name, tagline, subtitle } = siteConfig;
 
 	return (
-		<section className={styles.section} aria-labelledby="hero-heading">
+		<section
+			id="hero"
+			className={styles.section}
+			aria-labelledby="hero-heading"
+		>
 			<h1 id="hero-heading" className={styles.heading}>
 				{name}
 			</h1>

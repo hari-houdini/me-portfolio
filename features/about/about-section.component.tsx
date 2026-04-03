@@ -21,7 +21,11 @@ interface AboutSectionProps {
 
 export function AboutSection({ about, sectionTitle }: AboutSectionProps) {
 	return (
-		<section className={styles.section} aria-labelledby="about-heading">
+		<section
+			id="about"
+			className={styles.section}
+			aria-labelledby="about-heading"
+		>
 			<div className={styles.container}>
 				<h2 id="about-heading" className={styles.heading}>
 					{sectionTitle ?? "About"}

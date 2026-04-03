@@ -1,0 +1,63 @@
+.nav {
+	position: fixed;
+	top: var(--space-sm);
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 150;
+}
+
+.glass {
+	/* Override radius to pill shape for the nav */
+	border-radius: 9999px !important;
+	padding: var(--space-2xs) var(--space-xs);
+	position: relative;
+	overflow: hidden;
+}
+
+.lamp {
+	position: absolute;
+	top: var(--lamp-y, 50%);
+	left: var(--lamp-x, 50%);
+	width: 80px;
+	height: 80px;
+	transform: translate(-50%, -50%);
+	background: radial-gradient(
+		circle at center,
+		rgba(0, 247, 255, 0.25) 0%,
+		transparent 70%
+	);
+	border-radius: 50%;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity var(--transition-fast), top 80ms ease, left 80ms ease;
+}
+
+.list {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2xs);
+}
+
+.link {
+	display: block;
+	padding: var(--space-2xs) var(--space-xs);
+	font-family: var(--font-heading);
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--color-text-muted);
+	text-decoration: none;
+	border-radius: 9999px;
+	transition:
+		color var(--transition-fast),
+		background-color var(--transition-fast);
+	white-space: nowrap;
+}
+
+.link:hover {
+	color: var(--color-text);
+}
+
+.link.active {
+	color: var(--color-cta);
+	background: var(--color-accent-dim);
+}

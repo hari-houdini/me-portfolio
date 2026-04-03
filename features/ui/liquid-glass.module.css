@@ -1,0 +1,16 @@
+.glass {
+	background: rgba(255, 255, 255, 0.04);
+	/* Fallback for browsers without backdrop-filter support */
+	background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	backdrop-filter: blur(20px) saturate(180%);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: var(--radius-lg);
+}
+
+/* Light mode — slightly more opaque glass */
+html[data-theme="light"] .glass {
+	background: rgba(0, 0, 0, 0.04);
+	background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+	border-color: rgba(0, 0, 0, 0.08);
+}

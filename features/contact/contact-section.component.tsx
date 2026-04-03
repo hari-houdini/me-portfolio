@@ -17,7 +17,11 @@ export function ContactSection({ contact, sectionTitle }: ContactSectionProps) {
 	const { email, ctaText, socials } = contact;
 
 	return (
-		<section className={styles.section} aria-labelledby="contact-heading">
+		<section
+			id="contact"
+			className={styles.section}
+			aria-labelledby="contact-heading"
+		>
 			<div className={styles.container}>
 				<h2 id="contact-heading" className={styles.heading}>
 					{sectionTitle ?? "Contact"}

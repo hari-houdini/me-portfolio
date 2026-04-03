@@ -16,7 +16,11 @@ interface WorkSectionProps {
 
 export function WorkSection({ projects, sectionTitle }: WorkSectionProps) {
 	return (
-		<section className={styles.section} aria-labelledby="work-heading">
+		<section
+			id="work"
+			className={styles.section}
+			aria-labelledby="work-heading"
+		>
 			<div className={styles.container}>
 				<h2 id="work-heading" className={styles.heading}>
 					{sectionTitle ?? "Work"}
