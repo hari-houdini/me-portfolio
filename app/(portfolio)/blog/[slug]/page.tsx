@@ -15,7 +15,19 @@ import { CmsService, CmsServiceLive } from "@cms/mod";
 import { BlogPost } from "@features/blog/mod";
 import { Effect } from "effect";
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+
+const ReadingProgress = dynamic(
+	() =>
+		import("@features/ui/mod").then((m) => ({ default: m.ReadingProgress })),
+	{ ssr: false },
+);
+const TracingBeam = dynamic(
+	() => import("@features/ui/mod").then((m) => ({ default: m.TracingBeam })),
+	{ ssr: false },
+);
 
 export const revalidate = 3600;
 
@@ -97,9 +109,18 @@ export default async function PostPage({ params, searchParams }: PageProps) {
 		notFound();
 	}
 
+	const tracingBeam = data?.post.tracingBeam ?? true;
+
 	return (
 		<main id="main-content">
-			<BlogPost data={data} filterContext={filterContext} />
+			<Suspense fallback={null}>
+				<ReadingProgress />
+			</Suspense>
+			<Suspense fallback={null}>
+				<TracingBeam enabled={tracingBeam}>
+					<BlogPost data={data} filterContext={filterContext} />
+				</TracingBeam>
+			</Suspense>
 		</main>
 	);
 }

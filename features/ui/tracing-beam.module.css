@@ -1,0 +1,28 @@
+.wrapper {
+	position: relative;
+}
+
+.track {
+	position: absolute;
+	left: -28px;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background: var(--color-border);
+	overflow: hidden;
+}
+
+.beam {
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(to bottom, var(--color-cta), var(--color-icon));
+	transform-origin: top;
+	transform: scaleY(0);
+	will-change: transform;
+}
+
+@media (max-width: 768px) {
+	.track {
+		display: none;
+	}
+}

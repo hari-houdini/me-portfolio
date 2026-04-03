@@ -1,0 +1,19 @@
+.track {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 4px;
+	z-index: 9999;
+	background: transparent;
+	pointer-events: none;
+}
+
+.bar {
+	height: 100%;
+	width: 0%;
+	background: var(--color-cta);
+	box-shadow: 0 0 8px var(--color-cta);
+	transition: width 0.1s linear;
+	will-change: width;
+}

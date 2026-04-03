@@ -1,0 +1,31 @@
+.mapWrapper {
+	margin: 2rem 0 0;
+	padding: 0;
+	border: 0;
+	width: 100%;
+}
+
+.map {
+	width: 100%;
+	overflow: hidden;
+	border-radius: 8px;
+	opacity: 0.7;
+}
+
+.map svg {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+.srOnly {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}

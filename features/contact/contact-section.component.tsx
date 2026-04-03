@@ -5,8 +5,8 @@
  * Pure Server Component. Styled via contact-section.module.css.
  */
 
-import type { ContactData } from "@cms/mod";
-import { SectionHeading } from "@features/ui/mod";
+import type { ContactData, UIConfigData } from "@cms/mod";
+import { SectionHeading, WorldMap } from "@features/ui/mod";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import styles from "./contact-section.module.css";
@@ -22,9 +22,14 @@ const SectionBackground = dynamic(
 interface ContactSectionProps {
 	contact: ContactData;
 	sectionTitle?: string | null;
+	uiConfig?: UIConfigData | null;
 }
 
-export function ContactSection({ contact, sectionTitle }: ContactSectionProps) {
+export function ContactSection({
+	contact,
+	sectionTitle,
+	uiConfig,
+}: ContactSectionProps) {
 	const { email, ctaText, socials } = contact;
 	const background = contact.contactStyle?.background;
 	const titleEffect = contact.contactStyle?.titleEffect;
@@ -71,6 +76,7 @@ export function ContactSection({ contact, sectionTitle }: ContactSectionProps) {
 						</ul>
 					) : null}
 				</address>
+				{uiConfig ? <WorldMap locations={uiConfig.worldMapLocations} /> : null}
 			</div>
 		</section>
 	);
