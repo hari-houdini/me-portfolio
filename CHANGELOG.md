@@ -1,3 +1,23 @@
+# [1.8.0](https://github.com/hari-houdini/me-portfolio/compare/v1.7.0...v1.8.0) (2026-04-04)
+
+
+### Bug Fixes
+
+* **build:** move next/dynamic ssr:false calls into client components ([5d71708](https://github.com/hari-houdini/me-portfolio/commit/5d71708ec7775c36dcda00f441999e6eac920f68))
+
+
+### Features
+
+* **rsc:** refactor blog + sections to proper RSC/Client boundaries ([f2f9659](https://github.com/hari-houdini/me-portfolio/commit/f2f9659c395b5293ff46df5694ad16a7e35eaa55))
+* **ui:** Phase A — CMS schema, new globals, canvas pod removal ([615a91c](https://github.com/hari-houdini/me-portfolio/commit/615a91cd8486997b8a37ed55a1dfac8a17ef4c4a))
+* **ui:** Phase B — design system, Inter+Lora fonts, dark/light theme tokens ([fd12339](https://github.com/hari-houdini/me-portfolio/commit/fd12339b8c15c338b995619e5a074e71c9f6a428))
+* **ui:** Phase C — Section Nav, Theme Toggle, Liquid Glass ([35f4969](https://github.com/hari-houdini/me-portfolio/commit/35f4969d6c967ab8127773ce70acfcf69ce21c35))
+* **ui:** Phase D — background system, 10 variants + section integration ([19ee5c6](https://github.com/hari-houdini/me-portfolio/commit/19ee5c6af697cc85e9850d919da41314933270aa))
+* **ui:** Phase E — title effects, Lamp Effect, section heading integration ([c6fb128](https://github.com/hari-houdini/me-portfolio/commit/c6fb12809dac7a9bb6686b19fb33d2af2c42cabd))
+* **ui:** Phase F — interactive components (cursor, search, cards, buttons) ([abb9b53](https://github.com/hari-houdini/me-portfolio/commit/abb9b531c066b5af88c0080c6e4b142e202f1208))
+* **ui:** Phase G — reading progress, tracing beam, world map ([bd4fd23](https://github.com/hari-houdini/me-portfolio/commit/bd4fd2365f70dc274252f3a0913605bb4ba2c21b))
+* **ui:** Phase H — supplementary carousels (card-stack, infinite-scroll, parallax) ([5345258](https://github.com/hari-houdini/me-portfolio/commit/53452580a1850ab1b180a9d918413c686c756323))
+
 # [1.7.0](https://github.com/hari-houdini/me-portfolio/compare/v1.6.0...v1.7.0) (2026-04-03)
 
 
