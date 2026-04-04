@@ -18,6 +18,7 @@
 
 import type { CollectionConfig } from "payload";
 import { isAdmin } from "../access/is-admin.access";
+import { RichTextLabel } from "./components/rich-text-label";
 
 export const Posts: CollectionConfig = {
 	slug: "posts",
@@ -59,6 +60,11 @@ export const Posts: CollectionConfig = {
 			admin: {
 				description:
 					"Full post content. Supports headings, code blocks, links, and images.",
+				components: {
+					// Render as <span> — avoids invalid htmlFor on Lexical's div[contenteditable].
+					// biome-ignore lint/suspicious/noExplicitAny: Payload component type is loose
+					Label: RichTextLabel as any,
+				},
 			},
 		},
 		{

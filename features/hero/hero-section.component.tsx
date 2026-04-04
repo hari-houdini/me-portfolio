@@ -1,26 +1,14 @@
-"use client";
-
 /**
  * hero-section.component.tsx
  *
- * Hero section — name, tagline, optional subtitle.
- * Client Component (required for next/dynamic ssr: false on SectionBackground).
- * Receives CMS props from the parent RSC page.
+ * Pure Server Component: receives CMS props, renders semantic HTML.
+ * SectionBackgroundMount (client wrapper) handles the lazy Three.js canvas.
  */
 
 import type { SiteConfigData } from "@cms/mod";
+import { SectionBackgroundMount } from "@features/ui/backgrounds/section-background-mount.client";
 import { SectionHeading } from "@features/ui/mod";
-import dynamic from "next/dynamic";
-import { Suspense } from "react";
 import styles from "./hero-section.module.css";
-
-const SectionBackground = dynamic(
-	() =>
-		import("@features/ui/backgrounds/section-background.client.component").then(
-			(m) => ({ default: m.SectionBackground }),
-		),
-	{ ssr: false },
-);
 
 interface HeroSectionProps {
 	siteConfig: SiteConfigData;
@@ -37,11 +25,7 @@ export function HeroSection({ siteConfig }: HeroSectionProps) {
 			className={styles.section}
 			aria-labelledby="hero-heading"
 		>
-			{background && background !== "none" ? (
-				<Suspense fallback={null}>
-					<SectionBackground variant={background} />
-				</Suspense>
-			) : null}
+			<SectionBackgroundMount variant={background} />
 			<div className={styles.content}>
 				<SectionHeading
 					level={1}

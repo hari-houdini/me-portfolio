@@ -90,6 +90,11 @@ const getPageData = cache(() =>
 			return yield* cms.getAllPageData();
 		}).pipe(
 			Effect.provide(CmsServiceLive),
+			Effect.tapError((err) =>
+				Effect.sync(() =>
+					console.error("[CMS] getAllPageData failed — serving fallback:", err),
+				),
+			),
 			Effect.catchAll(() => Effect.succeed(fallbackPageData)),
 		),
 	),

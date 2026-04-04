@@ -40,6 +40,22 @@ import type {
 	WorkConfigData,
 } from "./cms.schema";
 
+// Defaults used when non-critical globals/collections fail to load
+// (e.g. global not yet initialized in DB, or table missing after a migration)
+const defaultWorkConfig: WorkConfigData = {
+	id: 0,
+	workStyle: {
+		background: "none",
+		titleEffect: "none",
+		projectCardStyle: "glow",
+	},
+};
+
+const defaultUIConfig: UIConfigData = {
+	id: 0,
+	worldMapLocations: [],
+};
+
 // ---------------------------------------------------------------------------
 // Service interface
 // ---------------------------------------------------------------------------
@@ -99,9 +115,17 @@ export const CmsServiceLive: Layer.Layer<CmsService> = Layer.succeed(
 				about: Repo.fetchAbout,
 				contact: Repo.fetchContact,
 				projects: Repo.fetchProjects,
-				recentPosts: Repo.fetchRecentPosts(4),
-				workConfig: Repo.fetchWorkConfig,
-				uiConfig: Repo.fetchUIConfig,
+				// Non-critical: fall back to defaults if the global isn't initialized
+				// yet in the DB or the posts table hasn't been migrated.
+				recentPosts: Repo.fetchRecentPosts(4).pipe(
+					Effect.catchAll(() => Effect.succeed([] as PostData[])),
+				),
+				workConfig: Repo.fetchWorkConfig.pipe(
+					Effect.catchAll(() => Effect.succeed(defaultWorkConfig)),
+				),
+				uiConfig: Repo.fetchUIConfig.pipe(
+					Effect.catchAll(() => Effect.succeed(defaultUIConfig)),
+				),
 			}),
 
 		getBlogListData: (params?: BlogListParams) => Repo.fetchBlogList(params),

@@ -10,6 +10,7 @@
 
 import type { GlobalConfig } from "payload";
 import { isAdmin } from "../access/is-admin.access";
+import { RichTextLabel } from "../collections/components/rich-text-label";
 import { BACKGROUND_OPTIONS, TITLE_EFFECT_OPTIONS } from "./style-options";
 
 export const About: GlobalConfig = {
@@ -31,6 +32,11 @@ export const About: GlobalConfig = {
 			admin: {
 				description:
 					"Main biography — supports bold, italic, links, and lists.",
+				components: {
+					// Render as <span> — avoids invalid htmlFor on Lexical's div[contenteditable].
+					// biome-ignore lint/suspicious/noExplicitAny: Payload component type is loose
+					Label: RichTextLabel as any,
+				},
 			},
 		},
 		{

@@ -27,7 +27,7 @@
 		"payload:migrate:create": "payload migrate:create",
 		"payload:migrate:fresh": "payload migrate:fresh",
 		"payload:generate-importmap": "payload generate:importmap",
-		"varlock:load": "varlock load",
+		"varlock:load": "varlock load --env development",
 		"varlock:pull": "varlock pull --env development > .env.local",
 		"varlock:push": "varlock push --env development"
 	},

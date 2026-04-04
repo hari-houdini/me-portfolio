@@ -5,11 +5,18 @@
  *
  * Client wrapper for blog post page client-only components.
  * Must be "use client" so that next/dynamic with ssr: false is valid.
+ *
+ * BlogPost (async RSC) is NOT imported here. It is rendered by the RSC page
+ * and passed as `children` — this is the correct Next.js 15 pattern for
+ * composing async Server Components inside a Client Component boundary.
+ *
+ * Pattern:
+ *   RSC page.tsx       → renders <BlogPost>, passes as children
+ *   BlogClientShell    → wraps ReadingProgress + TracingBeam around children
  */
 
-import type { BlogPostProps } from "@features/blog/mod";
-import { BlogPost } from "@features/blog/mod";
 import dynamic from "next/dynamic";
+import type { ReactNode } from "react";
 import { Suspense } from "react";
 
 const ReadingProgress = dynamic(
@@ -24,15 +31,13 @@ const TracingBeam = dynamic(
 );
 
 interface BlogClientShellProps {
-	data: BlogPostProps["data"];
-	filterContext?: BlogPostProps["filterContext"];
 	tracingBeam: boolean;
+	children: ReactNode;
 }
 
 export function BlogClientShell({
-	data,
-	filterContext,
 	tracingBeam,
+	children,
 }: BlogClientShellProps) {
 	return (
 		<>
@@ -40,9 +45,7 @@ export function BlogClientShell({
 				<ReadingProgress />
 			</Suspense>
 			<Suspense fallback={null}>
-				<TracingBeam enabled={tracingBeam}>
-					<BlogPost data={data} filterContext={filterContext} />
-				</TracingBeam>
+				<TracingBeam enabled={tracingBeam}>{children}</TracingBeam>
 			</Suspense>
 		</>
 	);

@@ -12,6 +12,7 @@
 
 import type { FilterContext, PostPageData } from "@cms/mod";
 import { CmsService, CmsServiceLive } from "@cms/mod";
+import { BlogPost } from "@features/blog/mod";
 import { Effect } from "effect";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -101,11 +102,9 @@ export default async function PostPage({ params, searchParams }: PageProps) {
 
 	return (
 		<main id="main-content">
-			<BlogClientShell
-				data={data}
-				filterContext={filterContext}
-				tracingBeam={tracingBeam}
-			/>
+			<BlogClientShell tracingBeam={tracingBeam}>
+				<BlogPost data={data} filterContext={filterContext} />
+			</BlogClientShell>
 		</main>
 	);
 }

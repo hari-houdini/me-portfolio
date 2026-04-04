@@ -1,27 +1,15 @@
-"use client";
-
 /**
  * work-section.component.tsx
  *
- * Work section — grid of project cards.
- * Client Component (required for next/dynamic ssr: false on SectionBackground).
- * Receives CMS props from the parent RSC page.
+ * Pure Server Component: receives CMS props, renders semantic HTML.
+ * SectionBackgroundMount (client wrapper) handles the lazy Three.js canvas.
  */
 
 import type { ProjectData, WorkConfigData } from "@cms/mod";
+import { SectionBackgroundMount } from "@features/ui/backgrounds/section-background-mount.client";
 import { SectionHeading } from "@features/ui/mod";
-import dynamic from "next/dynamic";
-import { Suspense } from "react";
 import { ProjectCard } from "./project-card.component";
 import styles from "./work-section.module.css";
-
-const SectionBackground = dynamic(
-	() =>
-		import("@features/ui/backgrounds/section-background.client.component").then(
-			(m) => ({ default: m.SectionBackground }),
-		),
-	{ ssr: false },
-);
 
 interface WorkSectionProps {
 	projects: ProjectData[];
@@ -43,11 +31,7 @@ export function WorkSection({
 			className={styles.section}
 			aria-labelledby="work-heading"
 		>
-			{background && background !== "none" ? (
-				<Suspense fallback={null}>
-					<SectionBackground variant={background} />
-				</Suspense>
-			) : null}
+			<SectionBackgroundMount variant={background} />
 			<div className={styles.container}>
 				<SectionHeading
 					level={2}

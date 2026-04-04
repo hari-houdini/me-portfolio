@@ -97,11 +97,15 @@ export interface Config {
     'site-config': SiteConfig;
     about: About;
     contact: Contact;
+    'work-config': WorkConfig;
+    'ui-config': UiConfig;
   };
   globalsSelect: {
     'site-config': SiteConfigSelect<false> | SiteConfigSelect<true>;
     about: AboutSelect<false> | AboutSelect<true>;
     contact: ContactSelect<false> | ContactSelect<true>;
+    'work-config': WorkConfigSelect<false> | WorkConfigSelect<true>;
+    'ui-config': UiConfigSelect<false> | UiConfigSelect<true>;
   };
   locale: null;
   widgets: {
@@ -341,6 +345,10 @@ export interface Post {
    */
   status: 'draft' | 'published';
   /**
+   * Show a tracing beam on the left edge of this post as the reader scrolls. Disable for very short posts.
+   */
+  tracingBeam?: boolean | null;
+  /**
    * SEO <title> override. Defaults to the post title if left empty.
    */
   metaTitle?: string | null;
@@ -544,6 +552,7 @@ export interface PostsSelect<T extends boolean = true> {
   tags?: T;
   publishedAt?: T;
   status?: T;
+  tracingBeam?: T;
   metaTitle?: T;
   metaDescription?: T;
   updatedAt?: T;
@@ -615,6 +624,30 @@ export interface SiteConfig {
     work?: string | null;
     contact?: string | null;
   };
+  heroStyle?: {
+    /**
+     * Animated background rendered behind the Hero section.
+     */
+    background?:
+      | (
+          | 'none'
+          | 'aurora'
+          | 'particles'
+          | 'waves'
+          | 'meteors'
+          | 'grid'
+          | 'noise'
+          | 'beams'
+          | 'vortex'
+          | 'orbs'
+          | 'ripple'
+        )
+      | null;
+    /**
+     * Animation effect applied to the hero heading.
+     */
+    titleEffect?: ('none' | 'typewriter' | 'glitch' | 'gradient' | 'shimmer') | null;
+  };
   seo: {
     metaTitle: string;
     metaDescription: string;
@@ -665,6 +698,30 @@ export interface About {
    * Optional portrait displayed in the About section.
    */
   photo?: (number | null) | Media;
+  aboutStyle?: {
+    /**
+     * Animated background rendered behind the About section.
+     */
+    background?:
+      | (
+          | 'none'
+          | 'aurora'
+          | 'particles'
+          | 'waves'
+          | 'meteors'
+          | 'grid'
+          | 'noise'
+          | 'beams'
+          | 'vortex'
+          | 'orbs'
+          | 'ripple'
+        )
+      | null;
+    /**
+     * Animation effect applied to the About heading.
+     */
+    titleEffect?: ('none' | 'typewriter' | 'glitch' | 'gradient' | 'shimmer') | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -698,6 +755,100 @@ export interface Contact {
         id?: string | null;
       }[]
     | null;
+  contactStyle?: {
+    /**
+     * Animated background rendered behind the Contact section.
+     */
+    background?:
+      | (
+          | 'none'
+          | 'aurora'
+          | 'particles'
+          | 'waves'
+          | 'meteors'
+          | 'grid'
+          | 'noise'
+          | 'beams'
+          | 'vortex'
+          | 'orbs'
+          | 'ripple'
+        )
+      | null;
+    /**
+     * Animation effect applied to the Contact heading.
+     */
+    titleEffect?: ('none' | 'typewriter' | 'glitch' | 'gradient' | 'shimmer') | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Controls the background, heading effect, and project card style for the Work section.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "work-config".
+ */
+export interface WorkConfig {
+  id: number;
+  workStyle?: {
+    /**
+     * Animated background rendered behind the Work section.
+     */
+    background?:
+      | (
+          | 'none'
+          | 'aurora'
+          | 'particles'
+          | 'waves'
+          | 'meteors'
+          | 'grid'
+          | 'noise'
+          | 'beams'
+          | 'vortex'
+          | 'orbs'
+          | 'ripple'
+        )
+      | null;
+    /**
+     * Animation effect applied to the section heading.
+     */
+    titleEffect?: ('none' | 'typewriter' | 'glitch' | 'gradient' | 'shimmer') | null;
+    /**
+     * Hover interaction style for project cards.
+     */
+    projectCardStyle?: ('glow' | 'spotlight' | 'tilt' | 'flip' | 'glassmorphism' | 'border-beam') | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Shared UI settings — world map locations and other portfolio-wide visual config.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ui-config".
+ */
+export interface UiConfig {
+  id: number;
+  /**
+   * Client / collaboration locations shown as dots on the world map in the Contact section. Enter a label, latitude, and longitude for each location.
+   */
+  worldMapLocations?:
+    | {
+        /**
+         * Display name for this location e.g. "London, UK".
+         */
+        label: string;
+        /**
+         * Latitude in decimal degrees (e.g. 51.5074).
+         */
+        lat: number;
+        /**
+         * Longitude in decimal degrees (e.g. -0.1278).
+         */
+        lng: number;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -716,6 +867,12 @@ export interface SiteConfigSelect<T extends boolean = true> {
         about?: T;
         work?: T;
         contact?: T;
+      };
+  heroStyle?:
+    | T
+    | {
+        background?: T;
+        titleEffect?: T;
       };
   seo?:
     | T
@@ -741,6 +898,12 @@ export interface AboutSelect<T extends boolean = true> {
         id?: T;
       };
   photo?: T;
+  aboutStyle?:
+    | T
+    | {
+        background?: T;
+        titleEffect?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -758,6 +921,45 @@ export interface ContactSelect<T extends boolean = true> {
         platform?: T;
         url?: T;
         label?: T;
+        id?: T;
+      };
+  contactStyle?:
+    | T
+    | {
+        background?: T;
+        titleEffect?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "work-config_select".
+ */
+export interface WorkConfigSelect<T extends boolean = true> {
+  workStyle?:
+    | T
+    | {
+        background?: T;
+        titleEffect?: T;
+        projectCardStyle?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ui-config_select".
+ */
+export interface UiConfigSelect<T extends boolean = true> {
+  worldMapLocations?:
+    | T
+    | {
+        label?: T;
+        lat?: T;
+        lng?: T;
         id?: T;
       };
   updatedAt?: T;

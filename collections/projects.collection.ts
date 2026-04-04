@@ -18,6 +18,7 @@
 
 import type { CollectionConfig } from "payload";
 import { isAdmin } from "../access/is-admin.access";
+import { RichTextLabel } from "./components/rich-text-label";
 
 export const Projects: CollectionConfig = {
 	slug: "projects",
@@ -53,6 +54,11 @@ export const Projects: CollectionConfig = {
 			label: "Long Description",
 			admin: {
 				description: "Full write-up. Supports rich text formatting.",
+				components: {
+					// Render as <span> — avoids invalid htmlFor on Lexical's div[contenteditable].
+					// biome-ignore lint/suspicious/noExplicitAny: Payload component type is loose
+					Label: RichTextLabel as any,
+				},
 			},
 		},
 		// ---- Media ------------------------------------------------------
