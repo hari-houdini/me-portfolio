@@ -12,10 +12,9 @@
  *  - ThemeToggle and SectionNav are client components, lazy-loaded with Suspense.
  */
 
-import dynamic from "next/dynamic";
 import { Inter, Lora } from "next/font/google";
-import { Suspense } from "react";
 import "./globals.css";
+import { UIShell } from "./_components/ui-shell.client";
 
 const inter = Inter({
 	subsets: ["latin"],
@@ -30,22 +29,6 @@ const lora = Lora({
 	display: "swap",
 	preload: true,
 });
-
-// Lazy-load client components to keep the RSC bundle clean
-const ThemeToggle = dynamic(
-	() => import("@features/ui/mod").then((m) => ({ default: m.ThemeToggle })),
-	{ ssr: false },
-);
-
-const SectionNav = dynamic(
-	() => import("@features/ui/mod").then((m) => ({ default: m.SectionNav })),
-	{ ssr: false },
-);
-
-const FluidCursor = dynamic(
-	() => import("@features/ui/mod").then((m) => ({ default: m.FluidCursor })),
-	{ ssr: false },
-);
 
 // Inline script — runs before paint to prevent FOUC.
 // Must NOT use any module-level APIs. Keep it tiny.
@@ -66,15 +49,7 @@ export default function PortfolioLayout({
 				className={`${inter.variable} ${lora.variable}`}
 				suppressHydrationWarning
 			>
-				<Suspense fallback={null}>
-					<ThemeToggle />
-				</Suspense>
-				<Suspense fallback={null}>
-					<SectionNav />
-				</Suspense>
-				<Suspense fallback={null}>
-					<FluidCursor />
-				</Suspense>
+				<UIShell />
 				{children}
 			</body>
 		</html>

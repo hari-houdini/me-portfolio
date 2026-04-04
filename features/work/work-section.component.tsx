@@ -1,8 +1,11 @@
+"use client";
+
 /**
  * work-section.component.tsx
  *
  * Work section — grid of project cards.
- * Pure Server Component. Styled via work-section.module.css.
+ * Client Component (required for next/dynamic ssr: false on SectionBackground).
+ * Receives CMS props from the parent RSC page.
  */
 
 import type { ProjectData, WorkConfigData } from "@cms/mod";

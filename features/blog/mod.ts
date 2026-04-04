@@ -10,6 +10,7 @@ export { BlogCarouselLoader } from "./blog-carousel-loader.component";
 // allow wrapping in Suspense at the call site.
 export { BlogFilters } from "./blog-filters.client.component";
 export { BlogList } from "./blog-list.component";
+export type { BlogPostProps } from "./blog-post.component";
 export { BlogPost } from "./blog-post.component";
 export { PostCard } from "./post-card.component";
 export {

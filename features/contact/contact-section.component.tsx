@@ -1,8 +1,11 @@
+"use client";
+
 /**
  * contact-section.component.tsx
  *
  * Contact section — email (selectable mailto link), CTA text, social links.
- * Pure Server Component. Styled via contact-section.module.css.
+ * Client Component (required for next/dynamic ssr: false on SectionBackground).
+ * Receives CMS props from the parent RSC page.
  */
 
 import type { ContactData, UIConfigData } from "@cms/mod";

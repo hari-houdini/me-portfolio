@@ -1,8 +1,11 @@
+"use client";
+
 /**
  * about-section.component.tsx
  *
  * About section — bio (Lexical rich text), skills list, optional portrait photo.
- * Pure Server Component: receives CMS props, renders semantic HTML.
+ * Client Component (required for next/dynamic ssr: false on SectionBackground).
+ * Receives CMS props from the parent RSC page.
  */
 
 import type { AboutData } from "@cms/mod";

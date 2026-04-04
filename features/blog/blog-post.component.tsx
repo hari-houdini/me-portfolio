@@ -16,7 +16,7 @@ import styles from "./blog-post.module.css";
 import { LexicalRenderer } from "./lexical-renderer.component";
 import { calculateReadingTime, formatReadingTime } from "./reading-time.util";
 
-interface BlogPostProps {
+export interface BlogPostProps {
 	data: PostPageData;
 	filterContext?: FilterContext;
 }

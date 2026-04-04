@@ -1,8 +1,11 @@
+"use client";
+
 /**
  * hero-section.component.tsx
  *
  * Hero section — name, tagline, optional subtitle.
- * Pure Server Component: receives CMS props, renders semantic HTML.
+ * Client Component (required for next/dynamic ssr: false on SectionBackground).
+ * Receives CMS props from the parent RSC page.
  */
 
 import type { SiteConfigData } from "@cms/mod";

@@ -1,12 +1,12 @@
+"use client";
+
 /**
  * project-card.component.tsx
  *
  * Individual project card — thumbnail, title, year, description, tags, links.
- * Pure Server Component. Renders the thumbnail via next/image when a URL is
- * available from the Payload Media relation.
+ * Client Component (required for next/dynamic ssr: false on card variants).
  *
  * cardStyle selects the hover/interaction variant from features/ui/cards.
- * Client-only card variants are lazy-loaded via next/dynamic.
  */
 
 import type {

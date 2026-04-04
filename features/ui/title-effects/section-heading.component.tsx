@@ -1,9 +1,11 @@
+"use client";
+
 /**
  * section-heading.component.tsx
  *
- * RSC-safe dispatcher: picks the correct title-effect component from the
- * CMS `titleEffect` variant. Client-only effects are lazy-loaded via
- * next/dynamic so this file itself remains a Server Component.
+ * Client Component dispatcher: picks the correct title-effect component from
+ * the CMS `titleEffect` variant. Client-only effects are lazy-loaded via
+ * next/dynamic (requires "use client" for ssr: false to work).
  *
  * Usage:
  *   <SectionHeading level={2} id="about-heading" variant={titleEffect}>
