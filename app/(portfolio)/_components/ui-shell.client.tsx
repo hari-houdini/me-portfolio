@@ -21,8 +21,13 @@ const SectionNav = dynamic(
 	{ ssr: false },
 );
 
+// const FluidCursor = dynamic(
+// 	() => import("@features/ui/mod").then((m) => ({ default: m.FluidCursor })),
+// 	{ ssr: false },
+// );
+
 const FluidCursor = dynamic(
-	() => import("@features/ui/mod").then((m) => ({ default: m.FluidCursor })),
+	() => import("@features/ui/cursor/fluid-cursor.client.component").then((m) => ({ default: m.FluidCursor })),
 	{ ssr: false },
 );
 
