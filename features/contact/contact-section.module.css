@@ -1,7 +1,7 @@
 .section {
 	position: relative;
 	padding: var(--space-xl) var(--space-md);
-	background-color: var(--color-surface);
+	/* background-color: var(--color-surface); */
 }
 
 .container {

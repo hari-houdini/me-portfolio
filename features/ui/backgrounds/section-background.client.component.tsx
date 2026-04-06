@@ -5,7 +5,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 // Lazy-loaded variant components — only loaded when needed
 const AuroraBackground = lazy(() =>
-	import("./aurora-background.client.component").then((m) => ({
+	import("./aurora/aurora.client.component").then((m) => ({
 		default: m.AuroraBackground,
 	})),
 );
