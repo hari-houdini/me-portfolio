@@ -1,11 +1,13 @@
-import cx from "classix";
+// import cx from "classix";
 import { AiFillLayout } from "react-icons/ai";
 import { CgDesignmodo, CgPerformance } from "react-icons/cg";
 import { DiReact } from "react-icons/di";
 import { FaAccessibleIcon } from "react-icons/fa";
 import { SiGsap, SiTypescript } from "react-icons/si";
 import { TbBrandThreejs } from "react-icons/tb";
-import Reveal from "@/app/components/common/reveal/reveal.component";
+import BentoGrid from "../common/bento-grid/bento-grid.component";
+import BentoCard from "../common/bento-grid/card/card.component";
+// import Reveal from "@/app/components/common/reveal/reveal.component";
 import SectionHeader from "../common/section/header/header.component";
 import styles from "./tech-stack.module.css";
 
@@ -79,7 +81,7 @@ export default function TechStack() {
         title="A focused stack, deeply."
         number="03"
       />
-      <div className={styles["cap-grid"]}>
+      {/* <div className={styles["cap-grid"]}>
         {items.map((Item, i) => (
           <Reveal
             key={Item.id}
@@ -94,7 +96,21 @@ export default function TechStack() {
             <span className={styles.desc}>{Item.desc}</span>
           </Reveal>
         ))}
-      </div>
+      </div> */}
+      <BentoGrid className={styles["cap-grid"]}>
+        {items.map((item) => (
+          // <Reveal key={item.id} delay={(index % 3) + 1}>
+          <BentoCard
+            key={item.id}
+            icon={item.glyph}
+            colSpan={item.span}
+            name={item.name}
+            description={item.desc}
+            href="#"
+          />
+          // {/* </Reveal> */}
+        ))}
+      </BentoGrid>
     </section>
   );
 }

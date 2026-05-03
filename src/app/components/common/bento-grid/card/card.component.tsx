@@ -1,45 +1,32 @@
+import cx from "classix";
+import Link from "next/link";
 import styles from "./card.module.css";
 import type { BentoCardProps } from "./card.schema";
 
-
-export function BentoCard({
+export default function BentoCard({
   icon: Icon,
+  header: Header,
   name,
   description,
-  cta,
+  colSpan = 1,
   href,
 }: BentoCardProps) {
   return (
-    <div className={styles["bento-card"]}
-  >
-    {/* <slot name="background" /> */}
+    <div className={cx(styles["bento-card"], styles[`bento-span-${colSpan}`])}>
+      <div className={styles["bento-card-info"]}>
+        {Icon && <Icon className={styles["bento-card-icon"]} size={36} />}
+        {Header && <Header className={styles["bento-card-icon"]} />}
 
-    <div
-      className={styles["bento-card-info"]}
-    >
-      <Icon
-          className={styles["bento-card-icon"]}
+        <h3 className={styles["bento-card-title"]}>{name}</h3>
+        <p className={styles["bento-card-description"]}>{description}</p>
+      </div>
+      <div className={styles["bento-card-overlay"]}>
+        <Link
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
         />
-
-      <h3 className={styles["bento-card-title"]}>
-        { name }
-      </h3>
-      <p className={styles["bento-card-description"]}>{description }</p>
+      </div>
     </div>
-
-    <div
-      className={styles["bento-card-cta-container"]}
-    >
-      <a
-        href={href}
-        className={styles["bento-card-cta"]}
-      >
-        { cta } →
-      </a>
-    </div>
-    <div
-      className={styles["bento-card-overlay"]}
-    />
-  </div>
-  )
+  );
 }
