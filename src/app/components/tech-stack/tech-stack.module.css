@@ -1,0 +1,85 @@
+.tech-stack {
+  margin: 60px auto;
+  padding: 60px var(--pad);
+  border-top: 0.5px solid var(--line-2);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 10, 10, 0.02) 0%,
+    rgba(10, 10, 10, 0.01) 100%
+  );
+}
+
+.cap-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 2px;
+  background: var(--line);
+  border: 0.5px solid var(--line);
+}
+.cap-item {
+  padding: 32px 24px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: background 0.4s;
+}
+.cap-item:hover {
+  background: var(--bg-1);
+}
+.cap-item .glyph {
+  font-family: var(--font-inter);
+  font-weight: 300;
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+.cap-item .name {
+  font-family: var(--font-inter);
+  font-size: 13px;
+  font-weight: 500;
+}
+.cap-item .desc {
+  font-family: var(--font-lora);
+  font-size: 13px;
+  color: var(--fg-dim);
+  line-height: 1.5;
+}
+.cap-item .num {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-family: var(--font-inter);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--fg-faint);
+}
+
+/* span widths */
+.cap-3 {
+  grid-column: span 3;
+}
+.cap-4 {
+  grid-column: span 4;
+}
+.cap-5 {
+  grid-column: span 5;
+}
+.cap-6 {
+  grid-column: span 6;
+}
+.cap-7 {
+  grid-column: span 7;
+}
+.cap-8 {
+  grid-column: span 8;
+}
+.cap-12 {
+  grid-column: span 12;
+}
+@media (max-width: 900px) {
+  .cap-grid > * {
+    grid-column: span 12;
+  }
+}

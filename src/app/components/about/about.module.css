@@ -1,0 +1,71 @@
+.about {
+  margin: 60px auto;
+  padding: 60px var(--pad);
+  border-top: 0.5px solid var(--line-2);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 10, 10, 0.02) 0%,
+    rgba(10, 10, 10, 0.01) 100%
+  );
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(40px, 6vw, 120px);
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.about-paragraphs p {
+  margin-bottom: 1.4em;
+}
+.about-paragraphs p:last-child {
+  margin-bottom: 0;
+}
+.about-paragraphs em {
+  color: var(--fg);
+  font-style: italic;
+}
+.about-paragraphs .pull {
+  font-family: var(--font-inter);
+  font-weight: 300;
+  font-style: normal;
+  font-size: clamp(28px, 3vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0.4em 0 0.8em;
+  display: block;
+}
+
+.about-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 0.5px solid var(--line);
+}
+.about-stat {
+  padding: 28px 24px;
+  background: var(--bg);
+}
+.about-stat .v {
+  font-family: var(--font-inter);
+  font-weight: 300;
+  font-size: clamp(36px, 4vw, 56px);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 8px;
+  font-feature-settings: "tnum";
+}
+.about-stat .l {
+  font-family: var(--font-inter);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
