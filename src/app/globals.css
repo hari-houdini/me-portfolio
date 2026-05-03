@@ -99,6 +99,7 @@ section {
   padding: clamp(96px, 14vh, 200px) var(--pad);
   max-width: var(--maxw);
   margin: 0 auto;
+  border-top: 0.5px solid var(--line-2);
 }
 
 @media (prefers-color-scheme: light) {

@@ -4,6 +4,7 @@ import cx from "classix";
 import Image from "next/image";
 import { H } from "react-accessible-headings";
 import Reveal from "@/app/components/common/reveal/reveal.component";
+import Status from "@/app/components/common/status/status.component";
 import styles from "./hero.module.css";
 import type { HeroProps } from "./hero.schema";
 
@@ -39,10 +40,7 @@ export default function Hero({
       <div className={styles["hero-grid"]}>
         <div className={styles["hero-meta-tl"]}>
           <Reveal>
-            <div className={styles["status-pill"]}>
-              <span className={styles["status-dot"]} />
-              <span>Since · 1996</span>
-            </div>
+            <Status text="Since · 1996" />
           </Reveal>
         </div>
         <div className={styles["hero-meta-tr"]}>
