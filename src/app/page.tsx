@@ -5,6 +5,7 @@ import { mockBlogs } from "./components/blogs/blogs.mock";
 import Hero from "./components/hero/hero.component";
 import Snapshot from "./components/snapshot/snapshot.component";
 import TechStack from "./components/tech-stack/tech-stack.component";
+import UIShell from "./components/ui-shell/ui-shell.component";
 import styles from "./page.module.css";
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
       <TechStack />
       <Snapshot />
       <Blogs title={"Musings"} blogs={mockBlogs} />
+      <UIShell />
     </div>
   );
 }

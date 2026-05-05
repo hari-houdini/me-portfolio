@@ -3,7 +3,10 @@ import { useMotionValue, useSpring, useTransform } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BlogsControllerProps } from "./blogs.schema";
 
-export default function useBlogsController({ duration, blogs }: BlogsControllerProps) {
+export default function useBlogsController({
+  duration,
+  blogs,
+}: BlogsControllerProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -36,14 +39,23 @@ export default function useBlogsController({ duration, blogs }: BlogsControllerP
     setActiveIndex((prev) => (prev - 1 + blogs.length) % blogs.length);
   };
 
-  useEffect(function blogTimerFn() {
-    const timer = window.setInterval(goNext, duration);
-    return () => window.clearInterval(timer);
-  }, [duration]);
+  useEffect(
+    function blogTimerFn() {
+      const timer = window.setInterval(goNext, duration);
+      return () => window.clearInterval(timer);
+    },
+    [duration],
+  );
 
   const current = useMemo(() => blogs[activeIndex], [activeIndex, blogs]);
-  const paddedIndex = useMemo(() => String(activeIndex + 1).padStart(2, "0"), [activeIndex]);
-  const progressHeight = useMemo(() => ((activeIndex + 1) / blogs.length) * 100, [activeIndex, blogs]);
+  const paddedIndex = useMemo(
+    () => String(activeIndex + 1).padStart(2, "0"),
+    [activeIndex],
+  );
+  const progressHeight = useMemo(
+    () => ((activeIndex + 1) / blogs.length) * 100,
+    [activeIndex, blogs],
+  );
 
   return {
     x,

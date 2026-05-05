@@ -7,7 +7,7 @@ export const BlogSchema = z.object({
   description: z.string(),
 });
 
-export type Blog= z.infer<typeof BlogSchema>;
+export type Blog = z.infer<typeof BlogSchema>;
 
 export const BlogsSchema = z.object({
   title: z.string(),
