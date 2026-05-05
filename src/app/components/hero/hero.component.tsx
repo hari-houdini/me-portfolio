@@ -24,6 +24,7 @@ export default function Hero({
             className={cx(styles["portrait-img"], styles["portrait-bw"])}
             alt="Portrait placeholder"
             src="/background/above-the-fold-bw.jpg"
+            loading="eager"
             width={1800}
             height={2700}
           />
@@ -31,6 +32,7 @@ export default function Hero({
             className={cx(styles["portrait-img"], styles["portrait-color"])}
             alt=""
             src="/background/above-the-fold-colored.jpg"
+            loading="eager"
             width={1800}
             height={2700}
           />

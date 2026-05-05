@@ -12,6 +12,7 @@ import curlFrag from "../shaders/curl.frag.glsl";
 import displayFrag from "../shaders/display.frag.glsl";
 import divergenceFrag from "../shaders/divergence.frag.glsl";
 import vertexShader from "../shaders/fluid.vert.glsl";
+import simpleVertexShader from "../shaders/fluid-simple.vert.glsl";
 import gradientSubtractFrag from "../shaders/gradient-subtract.frag.glsl";
 import pressureFrag from "../shaders/pressure.frag.glsl";
 import splatFrag from "../shaders/splat.frag.glsl";
@@ -77,7 +78,7 @@ export const FluidSimulation = ({
 }: {
   props: Required<FluidCursorProps>;
 }) => {
-  const { gl, size } = useThree();
+  const { size } = useThree();
 
   // State refs
   const colorUpdateTimer = useRef(0);
@@ -152,9 +153,13 @@ export const FluidSimulation = ({
       simTexelSize: new THREE.Vector2(1 / simW, 1 / simH),
     };
 
-    const createMaterial = (frag: string, customUniforms: any = {}) =>
+    const createMaterial = (
+      frag: string,
+      customUniforms: Record<string, THREE.IUniform> = {},
+      vert = vertexShader,
+    ) =>
       new THREE.ShaderMaterial({
-        vertexShader,
+        vertexShader: vert,
         fragmentShader: frag,
         uniforms: {
           texelSize: { value: uniforms.simTexelSize },
@@ -165,23 +170,35 @@ export const FluidSimulation = ({
       });
 
     const materials = {
-      clear: createMaterial(clearFrag, {
-        uTexture: { value: null },
-        value: { value: props.pressure },
-      }),
-      splat: createMaterial(splatFrag, {
-        uTarget: { value: null },
-        aspectRatio: { value: aspectRatio },
-        color: { value: new THREE.Vector3() },
-        point: { value: new THREE.Vector2() },
-        radius: { value: props.splatRadius / 100 },
-      }),
-      advection: createMaterial(advectionFrag, {
-        uVelocity: { value: null },
-        uSource: { value: null },
-        dt: { value: 0.016 },
-        dissipation: { value: 1 },
-      }),
+      clear: createMaterial(
+        clearFrag,
+        {
+          uTexture: { value: null },
+          value: { value: props.pressure },
+        },
+        simpleVertexShader,
+      ),
+      splat: createMaterial(
+        splatFrag,
+        {
+          uTarget: { value: null },
+          aspectRatio: { value: aspectRatio },
+          color: { value: new THREE.Vector3() },
+          point: { value: new THREE.Vector2() },
+          radius: { value: props.splatRadius / 100 },
+        },
+        simpleVertexShader,
+      ),
+      advection: createMaterial(
+        advectionFrag,
+        {
+          uVelocity: { value: null },
+          uSource: { value: null },
+          dt: { value: 0.016 },
+          dissipation: { value: 1 },
+        },
+        simpleVertexShader,
+      ),
       divergence: createMaterial(divergenceFrag, {
         uVelocity: { value: null },
       }),
@@ -200,11 +217,15 @@ export const FluidSimulation = ({
         uPressure: { value: null },
         uVelocity: { value: null },
       }),
-      display: createMaterial(displayFrag, {
-        uTexture: { value: null },
-        uShading: { value: props.shading },
-        texelSize: { value: uniforms.dyeTexelSize },
-      }),
+      display: createMaterial(
+        displayFrag,
+        {
+          uTexture: { value: null },
+          uShading: { value: props.shading },
+          texelSize: { value: uniforms.dyeTexelSize },
+        },
+        simpleVertexShader,
+      ),
     };
 
     const fsQuad = new FullScreenQuad(materials.display);

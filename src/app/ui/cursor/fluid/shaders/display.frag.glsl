@@ -1,18 +1,17 @@
 precision highp float;
 precision highp sampler2D;
 varying vec2 vUv;
-varying vec2 vL;
-varying vec2 vR;
-varying vec2 vT;
-varying vec2 vB;
 uniform sampler2D uTexture;
 uniform vec2 texelSize;
-// The Vue version used #ifdef SHADING. We will pass a uniform instead for easier dynamic toggling in React.
 uniform bool uShading;
 
 void main () {
   vec3 c = texture2D(uTexture, vUv).rgb;
   if (uShading) {
+    vec2 vL = vUv - vec2(texelSize.x, 0.0);
+    vec2 vR = vUv + vec2(texelSize.x, 0.0);
+    vec2 vT = vUv + vec2(0.0, texelSize.y);
+    vec2 vB = vUv - vec2(0.0, texelSize.y);
     vec3 lc = texture2D(uTexture, vL).rgb;
     vec3 rc = texture2D(uTexture, vR).rgb;
     vec3 tc = texture2D(uTexture, vT).rgb;
