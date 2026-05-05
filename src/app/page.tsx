@@ -1,5 +1,7 @@
 import cx from "classix";
-import { About } from "./components/about/about.component";
+import About from "./components/about/about.component";
+import Blogs from "./components/blogs/blogs.component";
+import { mockBlogs } from "./components/blogs/blogs.mock";
 import Hero from "./components/hero/hero.component";
 import Snapshot from "./components/snapshot/snapshot.component";
 import TechStack from "./components/tech-stack/tech-stack.component";
@@ -21,6 +23,7 @@ export default function App() {
       <About />
       <TechStack />
       <Snapshot />
+      <Blogs title={"Musings"} blogs={mockBlogs} />
     </div>
   );
 }

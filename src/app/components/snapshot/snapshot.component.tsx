@@ -5,27 +5,27 @@ import Status from "@/app/components/common/status/status.component";
 import styles from "./snapshot.module.css";
 
 const items = [
-    {
-        id: 1,
-        glyph: () => (<Status text="Building" />),
-        name: "Work",
-        desc: "A WebGPU-backed dashboard for a climate-data startup. Volumetric clouds rendered live from satellite tiles.",
-        span: 4,
-    },
-    {
-        id: 2,
-        glyph: () => (<Status text="Reading" />),
-        name: "Reading",
-        desc: "The Architecture of Concurrency, Verlyn Klinkenborg’s Several Short Sentences About Writing, and an embarrassing pile of Three.js release notes.",
-        span: 4,
-    },
-    {
-        id: 3,
-        glyph: () => (<Status text="Open to" />),
-        name: "Connect",
-        desc: "Senior IC roles. Embedded engagements with design-led studios. The occasional speaking slot if the room is small and curious.",
-        span: 4 ,
-    },
+  {
+    id: 1,
+    glyph: () => <Status text="Building" />,
+    name: "Work",
+    desc: "A WebGPU-backed dashboard for a climate-data startup. Volumetric clouds rendered live from satellite tiles.",
+    span: 4,
+  },
+  {
+    id: 2,
+    glyph: () => <Status text="Reading" />,
+    name: "Reading",
+    desc: "The Architecture of Concurrency, Verlyn Klinkenborg’s Several Short Sentences About Writing, and an embarrassing pile of Three.js release notes.",
+    span: 4,
+  },
+  {
+    id: 3,
+    glyph: () => <Status text="Open to" />,
+    name: "Connect",
+    desc: "Senior IC roles. Embedded engagements with design-led studios. The occasional speaking slot if the room is small and curious.",
+    span: 4,
+  },
 ];
 
 export default function Snapshot() {

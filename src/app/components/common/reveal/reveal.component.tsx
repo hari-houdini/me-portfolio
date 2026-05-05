@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { TYPED } from "@/app/utils/typed/mod";
+import { TYPED } from "@/utils/typed/mod";
 import styles from "./reveal.module.css";
 import type { RevealProps } from "./reveal.schema";
 

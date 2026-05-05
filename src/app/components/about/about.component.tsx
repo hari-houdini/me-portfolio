@@ -2,7 +2,7 @@ import Reveal from "@/app/components/common/reveal/reveal.component";
 import SectionHeader from "@/app/components/common/section/header/header.component";
 import styles from "./about.module.css";
 
-export function About() {
+export default function About() {
   return (
     <section data-screen-label="02 About" className={styles.about}>
       <SectionHeader

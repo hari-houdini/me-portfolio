@@ -1,0 +1,21 @@
+import { AnimatePresence, motion } from "motion/react";
+import styles from "./index.module.css";
+import type { BlogIndexProps } from "./index.schema";
+
+export default function BlogIndex({ x, y, paddedIndex }: BlogIndexProps) {
+  return (
+    <motion.div className={styles["background-number"]} style={{ x, y }}>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={paddedIndex}
+          initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
+          animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {paddedIndex}
+        </motion.span>
+      </AnimatePresence>
+    </motion.div>
+  );
+}

@@ -3,8 +3,6 @@ import type { BentoGridProps } from "./bento-grid.schema";
 
 export default function BentoGrid({ children, className }: BentoGridProps) {
   return (
-    <div className={`${styles["bento-grid"]} ${className}`}>
-      {children}
-    </div>
+    <div className={`${styles["bento-grid"]} ${className}`}>{children}</div>
   );
 }

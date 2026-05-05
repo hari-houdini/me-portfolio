@@ -21,11 +21,7 @@ export default function BentoCard({
         <p className={styles["bento-card-description"]}>{description}</p>
       </div>
       <div className={styles["bento-card-overlay"]}>
-        <Link
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-        />
+        <Link href={href} target="_blank" rel="noopener noreferrer" />
       </div>
     </div>
   );
