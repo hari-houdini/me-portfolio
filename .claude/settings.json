@@ -1,0 +1,66 @@
+{
+	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+	"cleanupPeriodDays": 40,
+	"includeGitInstructions": true,
+	"autoMemoryEnabled": true,
+	"model": "claude-sonnet-4-6",
+	"effortLevel": "high",
+	"hooks": {
+		"SessionStart": [
+			{
+				"matcher": "startup",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
+						"timeout": 10,
+						"statusMessage": "Loading project context..."
+					}
+				]
+			}
+		],
+		"PostToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "pnpm lint",
+						"timeout": 60
+					}
+				]
+			},
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run-test.sh",
+						"timeout": 30,
+						"statusMessage": "Running tests for edited file..."
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-checklist.sh",
+						"timeout": 15,
+						"async": true
+					}
+				]
+			}
+		]
+	},
+	"env": {
+		"CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+		"OTEL_METRICS_EXPORTER": "otlp"
+	},
+	"companyAnnouncements": [
+		"Welcome to Houdini Labs! To know more, visit https://harihoudini.dev",
+		"Reminder: Code reviews required for all PRs"
+	]
+}
